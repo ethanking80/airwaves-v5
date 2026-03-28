@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIRWAVES Admin</title>
+<link rel="icon" type="image/jpeg" href="/images/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a12;--surface:#12121e;--surface2:#1a1a2e;--surface3:#22223a;
+  --green:#39ff14;--green-dim:#2bcc10;--purple:#8b5cf6;
+  --blue:#06b6d4;--text:#e8e8f0;--text-dim:#9898a8;--text-muted:#58586a;
+  --danger:#ef4444;--warning:#f59e0b;--success:#22c55e;
+  --radius:12px;--radius-sm:8px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
+input,select,textarea{font-family:inherit;background:var(--surface2);color:var(--text);border:1px solid var(--surface3);border-radius:var(--radius-sm);padding:10px 14px;width:100%;outline:none;transition:border-color .2s;font-size:.9rem}
+input:focus,select:focus,textarea:focus{border-color:var(--green)}
+.btn{padding:10px 22px;border-radius:var(--radius-sm);font-weight:700;font-size:.85rem;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--green);color:#000}
+.btn-primary:hover{background:var(--green-dim)}
+.btn-secondary{background:var(--surface3);color:var(--text)}
+.btn-secondary:hover{background:var(--purple);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-sm{padding:6px 14px;font-size:.8rem}
+
+/* Login */
+.login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{background:var(--surface);border:1px solid var(--surface3);border-radius:var(--radius);padding:40px;max-width:400px;width:100%;text-align:center}
+.login-box img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--green);margin-bottom:16px}
+.login-box h1{font-family:'Archivo Black',sans-serif;font-size:1.4rem;margin-bottom:4px}
+.login-box .sub{color:var(--text-dim);font-size:.9rem;margin-bottom:24px}
+.login-box .field{margin-bottom:14px;text-align:left}
+.login-box label{display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em}
+.login-box .error{color:var(--danger);font-size:.85rem;margin-top:12px;padding:10px;background:rgba(239,68,68,.1);border-radius:var(--radius-sm);display:none}
+.login-box .register-link{margin-top:16px;font-size:.88rem;color:var(--text-dim)}
+
+/* Layout */
+.admin-layout{display:none;min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--surface);border-right:1px solid var(--surface2);padding:20px 0;display:flex;flex-direction:column;z-index:50}
+.sidebar .brand{display:flex;align-items:center;gap:10px;padding:0 20px 20px;border-bottom:1px solid var(--surface2);margin-bottom:12px}
+.sidebar .brand img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+.sidebar .brand span{font-family:'Archivo Black',sans-serif;font-size:1rem;background:linear-gradient(135deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sidebar nav{flex:1;padding:0 10px}
+.sidebar nav button{width:100%;text-align:left;padding:10px 14px;border-radius:var(--radius-sm);background:transparent;color:var(--text-dim);font-size:.88rem;font-weight:500;transition:all .2s;margin-bottom:2px;display:flex;align-items:center;gap:10px}
+.sidebar nav button:hover{color:var(--text);background:var(--surface2)}
+.sidebar nav button.active{color:var(--green);background:rgba(57,255,20,.08)}
+.sidebar .sidebar-footer{padding:12px 20px;border-top:1px solid var(--surface2);font-size:.8rem;color:var(--text-muted)}
+.sidebar .sidebar-footer a{color:var(--text-dim)}
+.content{margin-left:220px;padding:24px 32px;min-height:100vh}
+
+/* Dashboard Cards */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+.stat-card{background:var(--surface);border:1px solid var(--surface2);border-radius:var(--radius);padding:20px}
+.stat-card .label{font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.stat-card .value{font-family:'Archivo Black',sans-serif;font-size:1.8rem}
+.stat-card .value.green{color:var(--green)}
+.stat-card .value.purple{color:var(--purple)}
+.stat-card .value.blue{color:var(--blue)}
+.stat-card .value.warning{color:var(--warning)}
+
+/* Tables */
+.table-wrap{background:var(--surface);border:1px solid var(--surface2);border-radius:var(--radius);overflow:hidden}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--surface2);flex-wrap:wrap;gap:10px}
+.table-header h3{font-size:1rem;font-weight:700}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:12px 20px;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);border-bottom:1px solid var(--surface2);font-weight:600}
+td{padding:12px 20px;border-bottom:1px solid var(--surface2);font-size:.88rem;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.status-badge{font-size:.75rem;padding:3px 10px;border-radius:50px;font-weight:600}
+.status-pending{background:rgba(245,158,11,.12);color:var(--warning)}
+.status-shipped{background:rgba(6,182,212,.12);color:var(--blue)}
+.status-delivered{background:rgba(34,197,94,.12);color:var(--success)}
+.status-cancelled{background:rgba(239,68,68,.12);color:var(--danger)}
+
+/* Forms */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid .full{grid-column:1/-1}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--surface3);border-radius:var(--radius);max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:28px}
+.modal h3{font-family:'Archivo Black',sans-serif;margin-bottom:20px;font-size:1.2rem}
+
+/* Section header */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.section-header h2{font-family:'Archivo Black',sans-serif;font-size:1.3rem}
+
+/* Panels */
+.panel{background:var(--surface);border:1px solid var(--surface2);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.panel h3{font-size:1rem;font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--surface2)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#000;padding:12px 24px;border-radius:var(--radius);font-weight:700;font-size:.88rem;z-index:999;transition:transform .3s;box-shadow:0 8px 30px rgba(57,255,20,.3)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{width:60px}
+  .sidebar .brand span,.sidebar nav button span,.sidebar .sidebar-footer{display:none}
+  .sidebar nav button{justify-content:center;padding:12px}
+  .content{margin-left:60px;padding:16px}
+  .form-grid{grid-template-columns:1fr}
+}
+
+.view{display:none}
+.view.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* Product cards grid for admin */
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
+.admin-product-card{background:var(--surface);border:1px solid var(--surface2);border-radius:var(--radius);overflow:hidden;transition:border-color .2s}
+.admin-product-card:hover{border-color:var(--green)}
+.admin-product-card .card-img{height:180px;background:var(--surface2);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.admin-product-card .card-img img{width:100%;height:100%;object-fit:cover}
+.admin-product-card .card-img .no-img{font-size:3rem}
+.admin-product-card .card-img .card-badges{position:absolute;top:8px;left:8px;display:flex;gap:6px}
+.admin-product-card .card-img .card-badges span{font-size:.7rem;padding:2px 8px;border-radius:50px;font-weight:600}
+.admin-product-card .card-body{padding:16px}
+.admin-product-card .card-body h4{font-size:1rem;margin-bottom:4px}
+.admin-product-card .card-body .card-desc{font-size:.82rem;color:var(--text-dim);line-height:1.4;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.admin-product-card .card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.admin-product-card .card-meta span{font-size:.72rem;padding:3px 8px;background:var(--surface2);border-radius:4px;color:var(--text-dim)}
+.admin-product-card .card-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--surface2)}
+.admin-product-card .card-footer .price{font-family:'Archivo Black',sans-serif;font-size:1.1rem;color:var(--green)}
+.admin-product-card .card-footer .actions{display:flex;gap:6px}
+
+/* Tachometer rating gauge */
+.tacho-wrap{display:flex;align-items:center;gap:12px;padding:8px 16px}
+.tachometer{position:relative;width:70px;height:40px}
+.tachometer svg{width:70px;height:40px}
+.tacho-label{font-size:.78rem;color:var(--text-dim)}
+.tacho-label .tacho-value{font-family:'Archivo Black',sans-serif;font-size:1rem;color:var(--text)}
+.tacho-label .tacho-count{font-size:.7rem;color:var(--text-muted)}
+
+/* Image preview in form */
+.img-preview-wrap{display:flex;align-items:center;gap:12px;margin-top:6px}
+.img-preview-wrap img{width:80px;height:80px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--surface3)}
+.img-preview-wrap .no-preview{width:80px;height:80px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border-radius:var(--radius-sm);font-size:1.5rem;color:var(--text-muted)}
+
+/* Finance styles */
+.pay-breakdown{display:flex;flex-direction:column;gap:14px}
+.pay-bar-row{display:flex;align-items:center;gap:12px}
+.pay-bar-label{min-width:140px;font-size:.85rem;display:flex;align-items:center;gap:8px}
+.pay-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.pay-bar-track{flex:1;height:24px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.pay-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.pay-bar-val{min-width:90px;text-align:right;font-weight:700;font-size:.9rem}
+
+.daily-chart{display:flex;align-items:flex-end;gap:8px;height:160px;padding:10px 0}
+.daily-chart .chart-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+.daily-chart .chart-bar .bar-fill{width:100%;border-radius:4px 4px 0 0;background:var(--blue);transition:height .4s ease;min-height:2px;margin-top:auto}
+.daily-chart .chart-bar .bar-label{font-size:.7rem;color:var(--text-muted);white-space:nowrap}
+.daily-chart .chart-bar .bar-value{font-size:.72rem;color:var(--text-dim);font-weight:600}
+
+.tx-type-in{color:var(--success);font-weight:600}
+.tx-type-out{color:var(--danger);font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div class="login-page" id="loginPage">
+  <div class="login-box">
+    <img src="/images/logo.jpg" alt="AIRWAVES">
+    <h1>Admin Dashboard</h1>
+    <p class="sub">Sign in to manage your store</p>
+    <div id="loginForm">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="admin@airwaves.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()" style="width:100%;justify-content:center;margin-top:8px">Sign In</button>
+      <div class="error" id="loginError"></div>
+    </div>
+    <div class="register-link">
+      <span id="toggleAuthText">Need an account? <a href="#" onclick="event.preventDefault();toggleAuthMode()">Register</a></span>
+    </div>
+    <!-- Register form (hidden by default) -->
+    <div id="registerForm" style="display:none">
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="regName" placeholder="Your name">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="regEmail" placeholder="your@email.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="regPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()" style="width:100%;justify-content:center;margin-top:8px">Create Account</button>
+      <div class="error" id="regError"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LAYOUT -->
+<div class="admin-layout" id="adminLayout">
+  <div class="sidebar">
+    <div class="brand">
+      <img src="/images/logo.jpg" alt="">
+      <span>AIRWAVES</span>
+    </div>
+    <nav>
+      <button class="active" onclick="showSection('dashboard')" data-section="dashboard">📊 <span>Dashboard</span></button>
+      <button onclick="showSection('products')" data-section="products">📦 <span>Products</span></button>
+      <button onclick="showSection('orders')" data-section="orders">🛒 <span>Orders</span></button>
+      <button onclick="showSection('customers')" data-section="customers">👥 <span>Customers</span></button>
+      <button onclick="showSection('finance')" data-section="finance">💰 <span>Finance</span></button>
+      <button onclick="showSection('settings')" data-section="settings">⚙️ <span>Settings</span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/">← Back to Store</a><br>
+      <a href="#" onclick="event.preventDefault();adminLogout()">Sign Out</a>
+    </div>
+  </div>
+  
+  <div class="content">
+    <!-- DASHBOARD -->
+    <div class="view active" id="dashboardView">
+      <div class="section-header"><h2>Dashboard</h2><span style="color:var(--text-muted);font-size:.85rem" id="welcomeMsg"></span></div>
+      <div class="stat-grid" id="statsGrid">
+        <div class="stat-card"><div class="label">Products</div><div class="value green" id="statProducts">-</div></div>
+        <div class="stat-card"><div class="label">Orders</div><div class="value purple" id="statOrders">-</div></div>
+        <div class="stat-card"><div class="label">Revenue</div><div class="value blue" id="statRevenue">-</div></div>
+        <div class="stat-card"><div class="label">Customers</div><div class="value warning" id="statCustomers">-</div></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><h3>Recent Orders</h3></div>
+        <table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody id="recentOrders"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="view" id="productsView">
+      <div class="section-header">
+        <h2>Products</h2>
+        <button class="btn btn-primary" id="addProductBtn" onclick="openProductForm()">+ Add Product</button>
+      </div>
+      <div class="products-grid" id="productsGrid">
+        <div style="text-align:center;color:var(--text-muted);padding:40px;grid-column:1/-1">Loading...</div>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="view" id="ordersView">
+      <div class="section-header"><h2>Orders</h2></div>
+      <div class="table-wrap">
+        <table><thead><tr><th>ID</th><th>Customer</th><th>Total</th><th>Payment</th><th>Delivery</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody id="ordersTable"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="view" id="customersView">
+      <div class="section-header">
+        <h2>Users</h2>
+        <button class="btn btn-primary" id="createUserBtn" onclick="openUserForm()">+ Create User</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody id="customersTable"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- FINANCE -->
+    <div class="view" id="financeView">
+      <div class="section-header">
+        <h2>Finance</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-secondary" onclick="loadFinance('today')" id="finPeriodToday">Today</button>
+          <button class="btn btn-sm btn-secondary" onclick="loadFinance('week')" id="finPeriodWeek">Week</button>
+          <button class="btn btn-sm btn-secondary" onclick="loadFinance('month')" id="finPeriodMonth">Month</button>
+          <button class="btn btn-sm btn-primary" onclick="loadFinance('all')" id="finPeriodAll">All Time</button>
+        </div>
+      </div>
+
+      <!-- Cash Balance Card -->
+      <div class="panel" style="border-left:3px solid var(--green)">
+        <h3>Cash Balance</h3>
+        <div class="stat-grid" style="margin-bottom:16px">
+          <div class="stat-card"><div class="label">Opening Balance</div><div class="value green" id="finOpening">$0.00</div></div>
+          <div class="stat-card"><div class="label">Current Balance</div><div class="value green" id="finCurrent" style="font-size:2.2rem">$0.00</div></div>
+          <div class="stat-card"><div class="label">Today In</div><div class="value" style="color:var(--success)" id="finTodayIn">$0.00</div></div>
+          <div class="stat-card"><div class="label">Today Out</div><div class="value" style="color:var(--danger)" id="finTodayOut">$0.00</div></div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+          <div class="field" style="margin:0;flex:1;min-width:120px">
+            <label>Amount ($)</label>
+            <input type="number" step="0.01" min="0.01" id="cashTxAmount" placeholder="0.00">
+          </div>
+          <div class="field" style="margin:0;flex:2;min-width:200px">
+            <label>Description</label>
+            <input type="text" id="cashTxDesc" placeholder="Reason for transaction">
+          </div>
+          <div style="display:flex;gap:8px;padding-bottom:1px">
+            <button class="btn btn-primary btn-sm" onclick="logCashTx('cash_in')">+ Cash In</button>
+            <button class="btn btn-danger btn-sm" onclick="logCashTx('cash_out')">- Cash Out</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revenue Breakdown -->
+      <div class="stat-grid">
+        <div class="stat-card"><div class="label">Total Revenue</div><div class="value blue" id="finTotalRev">$0.00</div></div>
+        <div class="stat-card"><div class="label">Orders</div><div class="value purple" id="finOrderCount">0</div></div>
+        <div class="stat-card"><div class="label">Avg Order</div><div class="value warning" id="finAvgOrder">$0.00</div></div>
+      </div>
+
+      <!-- Payment Method Breakdown -->
+      <div class="panel">
+        <h3>Revenue by Payment Method</h3>
+        <div class="pay-breakdown" id="finPayBreakdown">
+          <div class="pay-bar-row">
+            <div class="pay-bar-label"><span class="pay-dot" style="background:#f7931a"></span>Bitcoin (BTC)</div>
+            <div class="pay-bar-track"><div class="pay-bar-fill" id="finBarBtc" style="background:#f7931a;width:0%"></div></div>
+            <div class="pay-bar-val" id="finValBtc">$0.00</div>
+          </div>
+          <div class="pay-bar-row">
+            <div class="pay-bar-label"><span class="pay-dot" style="background:#ff6600"></span>Monero (XMR)</div>
+            <div class="pay-bar-track"><div class="pay-bar-fill" id="finBarXmr" style="background:#ff6600;width:0%"></div></div>
+            <div class="pay-bar-val" id="finValXmr">$0.00</div>
+          </div>
+          <div class="pay-bar-row">
+            <div class="pay-bar-label"><span class="pay-dot" style="background:var(--success)"></span>Cash</div>
+            <div class="pay-bar-track"><div class="pay-bar-fill" id="finBarCash" style="background:var(--success);width:0%"></div></div>
+            <div class="pay-bar-val" id="finValCash">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Revenue Chart -->
+      <div class="panel">
+        <h3>Last 7 Days Revenue</h3>
+        <div class="daily-chart" id="finDailyChart"></div>
+      </div>
+
+      <!-- Top Products -->
+      <div class="panel">
+        <h3>Top Selling Products</h3>
+        <table><thead><tr><th>Product</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
+        <tbody id="finTopProducts"><tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px">Loading...</td></tr></tbody></table>
+      </div>
+
+      <!-- Transaction History -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>Cash Transactions</h3>
+          <div style="display:flex;gap:8px">
+            <select id="txFilterType" onchange="loadTransactions()" style="width:auto;padding:6px 10px;font-size:.8rem">
+              <option value="all">All Types</option>
+              <option value="cash_in">Cash In</option>
+              <option value="cash_out">Cash Out</option>
+            </select>
+            <select id="txFilterDays" onchange="loadTransactions()" style="width:auto;padding:6px 10px;font-size:.8rem">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="365">Last year</option>
+            </select>
+          </div>
+        </div>
+        <table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th><th>By</th></tr></thead>
+        <tbody id="finTxTable"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="view" id="settingsView">
+      <div class="section-header"><h2>Store Settings</h2></div>
+      <div class="panel">
+        <h3>General</h3>
+        <div class="form-grid">
+          <div class="field"><label>Store Name</label><input type="text" id="setStoreName"></div>
+          <div class="field"><label>Tagline</label><input type="text" id="setTagline"></div>
+          <div class="field"><label>Contact Email</label><input type="email" id="setEmail"></div>
+          <div class="field"><label>Phone</label><input type="text" id="setPhone"></div>
+          <div class="field full"><label>Store Description</label><textarea id="setStoreDesc" rows="3" placeholder="Describe your store..."></textarea></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Shipping & Tax</h3>
+        <div class="form-grid">
+          <div class="field"><label>Flat Rate Shipping ($)</label><input type="number" step="0.01" id="setShipping"></div>
+          <div class="field"><label>Free Shipping Threshold ($)</label><input type="number" step="0.01" id="setFreeShip"></div>
+          <div class="field"><label>Tax Rate (%)</label><input type="number" step="0.01" id="setTax"></div>
+          <div class="field"><label>Age Verification</label>
+            <select id="setAgeVerify"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Crypto Wallets</h3>
+        <div class="form-grid">
+          <div class="field full"><label>Bitcoin (BTC) Wallet Address</label><input type="text" id="setWalletBtc" placeholder="bc1q... or 1A1z..."></div>
+          <div class="field full"><label>Monero (XMR) Wallet Address</label><input type="text" id="setWalletXmr" placeholder="4..."></div>
+          <div class="field"><label>Crypto Payments</label>
+            <select id="setCryptoEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+          </div>
+          <div class="field"><label>Cash Payments</label>
+            <select id="setCashEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Cash Management</h3>
+        <div class="form-grid">
+          <div class="field"><label>Opening Cash Balance ($)</label><input type="number" step="0.01" id="setOpeningCash" placeholder="0.00"></div>
+          <div class="field"><label>Cash Float Amount ($)</label><input type="number" step="0.01" id="setCashFloat" placeholder="200.00"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>NYC Delivery</h3>
+        <div class="form-grid">
+          <div class="field"><label>Local Delivery</label>
+            <select id="setDeliveryEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+          </div>
+          <div class="field full"><label>Delivery Boroughs (comma-separated)</label><input type="text" id="setDeliveryBoroughs" placeholder="Manhattan,Brooklyn,Queens,Bronx,Staten Island"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT FORM MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <h3 id="productFormTitle">Add Product</h3>
+    <input type="hidden" id="prodEditId">
+    <div class="form-grid">
+      <div class="field"><label>Name</label><input type="text" id="prodName"></div>
+      <div class="field"><label>Price ($)</label><input type="number" step="0.01" id="prodPrice"></div>
+      <div class="field full"><label>Description</label><textarea id="prodDesc" rows="3"></textarea></div>
+      <div class="field"><label>Category</label>
+        <select id="prodCategory"><option>Flower</option><option>Pre-Rolls</option><option>Edibles</option><option>Tinctures</option><option>Topicals</option><option>Concentrates</option><option>Accessories</option><option>General</option></select>
+      </div>
+      <div class="field"><label>Strain Type</label>
+        <select id="prodStrain"><option value="">N/A</option><option>Indica</option><option>Sativa</option><option>Hybrid</option></select>
+      </div>
+      <div class="field"><label>THC Content</label><input type="text" id="prodTHC" placeholder="<0.3%"></div>
+      <div class="field"><label>CBD Content</label><input type="text" id="prodCBD" placeholder="18%"></div>
+      <div class="field"><label>Weight/Size</label><input type="text" id="prodWeight" placeholder="3.5g"></div>
+      <div class="field"><label>Stock</label><input type="number" id="prodStock" value="0"></div>
+      <div class="field"><label>Image URL</label><input type="text" id="prodImage" placeholder="/images/... or https://..." oninput="updateImagePreview()">
+        <div class="img-preview-wrap" id="imgPreviewWrap">
+          <div class="no-preview" id="imgNoPreview">🌿</div>
+          <img id="imgPreview" style="display:none" alt="Preview">
+        </div>
+      </div>
+      <div class="field"><label>Featured</label>
+        <select id="prodFeatured"><option value="false">No</option><option value="true">Yes</option></select>
+      </div>
+      <div class="field"><label>Active / Visible</label>
+        <select id="prodActive"><option value="true">Yes — visible in store</option><option value="false">No — hidden from store</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+      <button class="btn btn-secondary" onclick="closeProductForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER FORM MODAL -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <h3 id="userFormTitle">Create User</h3>
+    <input type="hidden" id="userEditId">
+    <div class="form-grid">
+      <div class="field"><label>Full Name</label><input type="text" id="userName" placeholder="Jane Doe"></div>
+      <div class="field"><label>Email</label><input type="email" id="userEmail" placeholder="jane@example.com"></div>
+      <div class="field"><label>Password <span id="pwdHint" style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(leave blank to keep current)</span></label><input type="password" id="userPassword" placeholder="••••••••"></div>
+      <div class="field"><label>Role</label>
+        <select id="userRole">
+          <option value="customer">Customer</option>
+          <option value="site_admin">Site Admin</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveUser()">Save User</button>
+      <button class="btn btn-secondary" onclick="closeUserForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+let adminToken = localStorage.getItem('aw_admin_token');
+let adminUser = null;
+let adminRole = null; // 'admin' or 'site_admin'
+let allProducts = [];
+let allOrders = [];
+let allCustomers = [];
+let currentAuthMode = 'login';
+
+// API helper
+async function api(path, options = {}) {
+  const opts = { headers: { 'Content-Type': 'application/json' }, ...options };
+  if (adminToken) opts.headers['Authorization'] = 'Bearer ' + adminToken;
+  const res = await fetch(path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', async () => {
+  try { await fetch('/api/db-init'); } catch {}
+  if (adminToken) {
+    try {
+      const data = await api('/api/auth?action=me');
+      if (data.user && (data.user.role === 'admin' || data.user.role === 'site_admin')) {
+        adminUser = data.user;
+        adminRole = data.user.role;
+        showAdmin();
+        return;
+      }
+    } catch {}
+    adminToken = null;
+    localStorage.removeItem('aw_admin_token');
+  }
+});
+
+function toggleAuthMode() {
+  if (currentAuthMode === 'login') {
+    currentAuthMode = 'register';
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    document.getElementById('toggleAuthText').innerHTML = 'Already have an account? <a href="#" onclick="event.preventDefault();toggleAuthMode()">Sign In</a>';
+  } else {
+    currentAuthMode = 'login';
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('toggleAuthText').innerHTML = 'Need an account? <a href="#" onclick="event.preventDefault();toggleAuthMode()">Register</a>';
+  }
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  if (!email || !password) { errEl.textContent = 'Please fill in all fields'; errEl.style.display = 'block'; return; }
+  try {
+    const data = await api('/api/auth?action=login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    if (data.user.role !== 'admin' && data.user.role !== 'site_admin') { errEl.textContent = 'Access denied. Admin accounts only.'; errEl.style.display = 'block'; return; }
+    adminToken = data.token;
+    localStorage.setItem('aw_admin_token', data.token);
+    adminUser = data.user;
+    adminRole = data.user.role;
+    showAdmin();
+  } catch (err) { errEl.textContent = err.message; errEl.style.display = 'block'; }
+}
+
+async function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const errEl = document.getElementById('regError');
+  errEl.style.display = 'none';
+  if (!name || !email || !password) { errEl.textContent = 'Please fill in all fields'; errEl.style.display = 'block'; return; }
+  try {
+    const data = await api('/api/auth?action=register', { method: 'POST', body: JSON.stringify({ email, password, name }) });
+    // New registrations are customers by default - inform user
+    errEl.textContent = 'Account created! However, admin access requires an admin role. Please contact the site owner.';
+    errEl.style.display = 'block';
+    errEl.style.background = 'rgba(57,255,20,.1)';
+    errEl.style.color = 'var(--green)';
+    // Switch back to login
+    setTimeout(() => toggleAuthMode(), 3000);
+  } catch (err) { errEl.textContent = err.message; errEl.style.display = 'block'; }
+}
+
+function showAdmin() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('adminLayout').style.display = 'block';
+  document.getElementById('welcomeMsg').textContent = 'Welcome, ' + (adminUser?.name || 'Admin');
+  // Hide restricted sections for site_admin
+  if (adminRole === 'site_admin') {
+    document.querySelector('[data-section="finance"]').style.display = 'none';
+    document.querySelector('[data-section="settings"]').style.display = 'none';
+    document.getElementById('addProductBtn').style.display = 'none';
+  } else {
+    document.querySelector('[data-section="finance"]').style.display = '';
+    document.querySelector('[data-section="settings"]').style.display = '';
+    document.getElementById('addProductBtn').style.display = '';
+  }
+  loadDashboard();
+}
+
+function adminLogout() {
+  adminToken = null;
+  adminUser = null;
+  adminRole = null;
+  localStorage.removeItem('aw_admin_token');
+  document.getElementById('adminLayout').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+}
+
+// Sections
+function showSection(name) {
+  // Block site_admin from accessing restricted sections
+  if (adminRole === 'site_admin' && (name === 'finance' || name === 'settings')) return;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(name + 'View')?.classList.add('active');
+  document.querySelectorAll('.sidebar nav button').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-section="${name}"]`)?.classList.add('active');
+
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'products') loadProducts();
+  if (name === 'orders') loadOrders();
+  if (name === 'customers') loadCustomers();
+  if (name === 'finance') loadFinance('all');
+  if (name === 'settings') loadSettings();
+}
+
+// Dashboard
+async function loadDashboard() {
+  try {
+    const [products, orders] = await Promise.all([
+      api('/api/products'),
+      api('/api/orders?all=true')
+    ]);
+    allProducts = products;
+    allOrders = orders;
+    
+    document.getElementById('statProducts').textContent = products.length;
+    document.getElementById('statOrders').textContent = orders.length;
+    const revenue = orders.reduce((s, o) => s + parseFloat(o.total || 0), 0);
+    document.getElementById('statRevenue').textContent = '$' + revenue.toFixed(2);
+    
+    // Count unique emails
+    const emails = new Set(orders.map(o => o.customer_email).filter(Boolean));
+    document.getElementById('statCustomers').textContent = emails.size;
+    
+    // Recent orders
+    const recent = orders.slice(0, 5);
+    document.getElementById('recentOrders').innerHTML = recent.length === 0
+      ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">No orders yet</td></tr>'
+      : recent.map(o => `<tr>
+          <td>#${o.id}</td>
+          <td>${esc(o.customer_name || 'N/A')}</td>
+          <td style="color:var(--green);font-weight:600">$${parseFloat(o.total).toFixed(2)}</td>
+          <td><span class="status-badge status-${o.status}">${o.status}</span></td>
+          <td style="color:var(--text-dim)">${new Date(o.created_at).toLocaleDateString()}</td>
+        </tr>`).join('');
+  } catch (err) { console.error(err); }
+}
+
+// Products
+let productRatings = {};
+
+async function loadProducts() {
+  try {
+    allProducts = await api('/api/products');
+    // Fetch ratings for all products in parallel
+    const ratingPromises = allProducts.map(p =>
+      fetch('/api/reviews?product_id=' + p.id).then(r => r.json()).catch(() => ({ summary: { average: 0, count: 0 } }))
+    );
+    const ratingsData = await Promise.all(ratingPromises);
+    productRatings = {};
+    allProducts.forEach((p, i) => {
+      productRatings[p.id] = ratingsData[i]?.summary || { average: 0, count: 0 };
+    });
+    renderProductCards();
+  } catch (err) { console.error(err); }
+}
+
+function renderProductCards() {
+  const grid = document.getElementById('productsGrid');
+  if (allProducts.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;grid-column:1/-1">No products</div>';
+    return;
+  }
+  grid.innerHTML = allProducts.map(p => {
+    const r = productRatings[p.id] || { average: 0, count: 0 };
+    return `<div class="admin-product-card">
+      <div class="card-img">
+        ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}">` : '<div class="no-img">🌿</div>'}
+        <div class="card-badges">
+          ${p.featured ? '<span class="status-badge status-delivered">Featured</span>' : ''}
+          ${p.active === false ? '<span class="status-badge status-cancelled">Hidden</span>' : ''}
+        </div>
+      </div>
+      <div class="card-body">
+        <h4>${esc(p.name)}</h4>
+        <div class="card-desc">${esc(p.description || '')}</div>
+        <div class="card-meta">
+          ${p.category ? `<span>${esc(p.category)}</span>` : ''}
+          ${p.strain_type && p.strain_type !== 'N/A' ? `<span>${esc(p.strain_type)}</span>` : ''}
+          ${p.thc_content ? `<span>THC ${esc(p.thc_content)}</span>` : ''}
+          ${p.cbd_content ? `<span>CBD ${esc(p.cbd_content)}</span>` : ''}
+          ${p.weight ? `<span>${esc(p.weight)}</span>` : ''}
+          <span>Stock: ${p.stock}</span>
+        </div>
+      </div>
+      <div class="tacho-wrap">
+        ${renderTachometer(r.average, 5)}
+        <div class="tacho-label">
+          <div class="tacho-value">${r.average.toFixed(1)} / 5</div>
+          <div class="tacho-count">${r.count} review${r.count !== 1 ? 's' : ''}</div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="price">$${parseFloat(p.price).toFixed(2)}</div>
+        ${adminRole === 'admin' ? `<div class="actions">
+          <button class="btn btn-secondary btn-sm" onclick="editProduct(${p.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Del</button>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTachometer(value, max) {
+  const pct = Math.min(value / max, 1);
+  // Color: red(0) -> yellow(0.5) -> green(1)
+  let color;
+  if (pct < 0.4) color = '#ef4444';
+  else if (pct < 0.7) color = '#f59e0b';
+  else color = '#39ff14';
+
+  // SVG arc: 180-degree semicircle
+  const cx = 35, cy = 36, r = 28;
+  const strokeW = 6;
+  const circumHalf = Math.PI * r; // half circle circumference
+  const dashLen = pct * circumHalf;
+  const dashGap = circumHalf - dashLen;
+
+  // Needle angle: 180 (left) to 0 (right)
+  const needleAngle = Math.PI * (1 - pct);
+  const nx = cx + (r - 2) * Math.cos(needleAngle);
+  const ny = cy - (r - 2) * Math.sin(needleAngle);
+
+  return `<div class="tachometer"><svg viewBox="0 0 70 40" xmlns="http://www.w3.org/2000/svg">
+    <path d="M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}" fill="none" stroke="var(--surface3)" stroke-width="${strokeW}" stroke-linecap="round"/>
+    <path d="M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-dasharray="${dashLen} ${dashGap}"/>
+    <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="3" fill="${color}"/>
+  </svg></div>`;
+}
+
+function updateImagePreview() {
+  const url = document.getElementById('prodImage').value.trim();
+  const img = document.getElementById('imgPreview');
+  const noPreview = document.getElementById('imgNoPreview');
+  if (url) {
+    img.src = url;
+    img.style.display = 'block';
+    noPreview.style.display = 'none';
+    img.onerror = () => { img.style.display = 'none'; noPreview.style.display = 'flex'; };
+  } else {
+    img.style.display = 'none';
+    noPreview.style.display = 'flex';
+  }
+}
+
+function openProductForm(product = null) {
+  document.getElementById('productFormTitle').textContent = product ? 'Edit Product' : 'Add Product';
+  document.getElementById('prodEditId').value = product?.id || '';
+  document.getElementById('prodName').value = product?.name || '';
+  document.getElementById('prodPrice').value = product?.price || '';
+  document.getElementById('prodDesc').value = product?.description || '';
+  document.getElementById('prodCategory').value = product?.category || 'Flower';
+  document.getElementById('prodStrain').value = product?.strain_type || '';
+  document.getElementById('prodTHC').value = product?.thc_content || '';
+  document.getElementById('prodCBD').value = product?.cbd_content || '';
+  document.getElementById('prodWeight').value = product?.weight || '';
+  document.getElementById('prodStock').value = product?.stock ?? 0;
+  document.getElementById('prodImage').value = product?.image_url || '';
+  document.getElementById('prodFeatured').value = product?.featured ? 'true' : 'false';
+  document.getElementById('prodActive').value = (product?.active === false) ? 'false' : 'true';
+  updateImagePreview();
+  document.getElementById('productModal').classList.add('show');
+}
+
+function closeProductForm() {
+  document.getElementById('productModal').classList.remove('show');
+}
+
+function editProduct(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (p) openProductForm(p);
+}
+
+async function saveProduct() {
+  const id = document.getElementById('prodEditId').value;
+  const body = {
+    name: document.getElementById('prodName').value.trim(),
+    price: parseFloat(document.getElementById('prodPrice').value),
+    description: document.getElementById('prodDesc').value.trim(),
+    category: document.getElementById('prodCategory').value,
+    strain_type: document.getElementById('prodStrain').value,
+    thc_content: document.getElementById('prodTHC').value.trim(),
+    cbd_content: document.getElementById('prodCBD').value.trim(),
+    weight: document.getElementById('prodWeight').value.trim(),
+    stock: parseInt(document.getElementById('prodStock').value) || 0,
+    image_url: document.getElementById('prodImage').value.trim(),
+    featured: document.getElementById('prodFeatured').value === 'true',
+    active: document.getElementById('prodActive').value === 'true'
+  };
+  if (!body.name || !body.price) { toast('Name and price are required', true); return; }
+  try {
+    if (id) {
+      await api('/api/products?id=' + id, { method: 'PUT', body: JSON.stringify(body) });
+    } else {
+      await api('/api/products', { method: 'POST', body: JSON.stringify(body) });
+    }
+    closeProductForm();
+    loadProducts();
+    toast('Product saved!');
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Delete this product?')) return;
+  try {
+    await api('/api/products?id=' + id, { method: 'DELETE' });
+    loadProducts();
+    toast('Product deleted');
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+// Orders
+async function loadOrders() {
+  try {
+    allOrders = await api('/api/orders?all=true');
+    document.getElementById('ordersTable').innerHTML = allOrders.length === 0
+      ? '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:30px">No orders</td></tr>'
+      : allOrders.map(o => {
+          const payLabel = o.payment_method === 'btc' ? '₿ BTC' : o.payment_method === 'xmr' ? 'ɱ XMR' : o.payment_method === 'cash' ? '💵 Cash' : o.payment_method || '—';
+          const delLabel = o.delivery_type === 'delivery' ? '🚗 ' + (o.delivery_borough || 'NYC') : '📦 Ship';
+          return `<tr>
+          <td>#${o.id}</td>
+          <td>${esc(o.customer_name || 'N/A')}<br><span style="font-size:.75rem;color:var(--text-muted)">${esc(o.customer_email || '')}</span></td>
+          <td style="color:var(--green);font-weight:600">$${parseFloat(o.total).toFixed(2)}</td>
+          <td style="font-size:.82rem">${payLabel}</td>
+          <td style="font-size:.82rem">${delLabel}</td>
+          <td><span class="status-badge status-${o.status}">${o.status}</span></td>
+          <td style="color:var(--text-dim);font-size:.82rem">${new Date(o.created_at).toLocaleDateString()}</td>
+          <td>
+            <select onchange="updateOrderStatus(${o.id}, this.value)" style="padding:6px 10px;font-size:.8rem;width:auto">
+              <option ${o.status==='pending'?'selected':''}>pending</option>
+              <option ${o.status==='shipped'?'selected':''}>shipped</option>
+              <option ${o.status==='delivered'?'selected':''}>delivered</option>
+              <option ${o.status==='cancelled'?'selected':''}>cancelled</option>
+            </select>
+          </td>
+        </tr>`;
+        }).join('');
+  } catch (err) { console.error(err); }
+}
+
+async function updateOrderStatus(id, status) {
+  try {
+    await api('/api/orders?id=' + id, { method: 'PUT', body: JSON.stringify({ status }) });
+    toast('Order updated');
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+// Users / Customers
+async function loadCustomers() {
+  try {
+    allCustomers = await api('/api/customers');
+    renderCustomers();
+  } catch {
+    document.getElementById('customersTable').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">User data unavailable</td></tr>';
+  }
+}
+
+function renderCustomers() {
+  document.getElementById('customersTable').innerHTML = allCustomers.length === 0
+    ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">No users found</td></tr>'
+    : allCustomers.map(c => {
+        const roleBadge = c.role === 'admin' ? 'status-shipped' : c.role === 'site_admin' ? 'status-delivered' : 'status-pending';
+        const canEdit = adminRole === 'admin' || (adminRole === 'site_admin' && c.role === 'customer');
+        const canDelete = adminRole === 'admin';
+        return `<tr>
+        <td><strong>${esc(c.name)}</strong></td>
+        <td style="color:var(--text-dim)">${esc(c.email)}</td>
+        <td><span class="status-badge ${roleBadge}">${c.role}</span></td>
+        <td style="color:var(--text-dim)">${new Date(c.created_at).toLocaleDateString()}</td>
+        <td>
+          ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="editUser(${c.id})">Edit</button>` : ''}
+          ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${c.id},'${esc(c.name)}')">Delete</button>` : ''}
+        </td>
+      </tr>`;
+      }).join('');
+}
+
+function openUserForm(user = null) {
+  document.getElementById('userFormTitle').textContent = user ? 'Edit User' : 'Create User';
+  document.getElementById('userEditId').value = user?.id || '';
+  document.getElementById('userName').value = user?.name || '';
+  document.getElementById('userEmail').value = user?.email || '';
+  document.getElementById('userPassword').value = '';
+  // Restrict role options based on logged-in admin's role
+  const roleSelect = document.getElementById('userRole');
+  const siteAdminOpt = roleSelect.querySelector('option[value="site_admin"]');
+  const adminOpt = roleSelect.querySelector('option[value="admin"]');
+  if (adminRole === 'site_admin') {
+    siteAdminOpt.style.display = 'none';
+    adminOpt.style.display = 'none';
+    roleSelect.value = 'customer';
+  } else {
+    siteAdminOpt.style.display = '';
+    adminOpt.style.display = '';
+    roleSelect.value = user?.role || 'customer';
+  }
+  document.getElementById('pwdHint').style.display = user ? 'inline' : 'none';
+  document.getElementById('userModal').classList.add('show');
+}
+
+function closeUserForm() {
+  document.getElementById('userModal').classList.remove('show');
+}
+
+function editUser(id) {
+  const u = allCustomers.find(x => x.id === id);
+  if (u) openUserForm(u);
+}
+
+async function saveUser() {
+  const id = document.getElementById('userEditId').value;
+  const body = {
+    name: document.getElementById('userName').value.trim(),
+    email: document.getElementById('userEmail').value.trim(),
+    role: document.getElementById('userRole').value,
+    password: document.getElementById('userPassword').value || undefined
+  };
+  if (!body.name || !body.email) { toast('Name and email are required', true); return; }
+  if (!id && !body.password) { toast('Password is required for new users', true); return; }
+  try {
+    if (id) {
+      await api('/api/customers?id=' + id, { method: 'PUT', body: JSON.stringify(body) });
+      toast('User updated!');
+    } else {
+      await api('/api/customers', { method: 'POST', body: JSON.stringify(body) });
+      toast('User created!');
+    }
+    closeUserForm();
+    loadCustomers();
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+async function deleteUser(id, name) {
+  if (!confirm('Delete user "' + name + '"? This cannot be undone.')) return;
+  try {
+    await api('/api/customers?id=' + id, { method: 'DELETE' });
+    toast('User deleted');
+    loadCustomers();
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+// Finance
+let currentFinancePeriod = 'all';
+
+async function loadFinance(period = 'all') {
+  currentFinancePeriod = period;
+  // Update period buttons
+  ['today','week','month','all'].forEach(p => {
+    const btn = document.getElementById('finPeriod' + p.charAt(0).toUpperCase() + p.slice(1));
+    if (btn) { btn.className = p === period ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary'; }
+  });
+
+  try {
+    const [summary, balance] = await Promise.all([
+      api('/api/finance?action=summary&period=' + period),
+      api('/api/finance?action=balance')
+    ]);
+
+    // Cash balance
+    document.getElementById('finOpening').textContent = '$' + balance.opening_balance.toFixed(2);
+    document.getElementById('finCurrent').textContent = '$' + balance.current_balance.toFixed(2);
+    document.getElementById('finTodayIn').textContent = '+$' + balance.today_in.toFixed(2);
+    document.getElementById('finTodayOut').textContent = '-$' + balance.today_out.toFixed(2);
+
+    // Revenue stats
+    document.getElementById('finTotalRev').textContent = '$' + summary.total_revenue.toFixed(2);
+    document.getElementById('finOrderCount').textContent = summary.order_count;
+    document.getElementById('finAvgOrder').textContent = '$' + summary.avg_order.toFixed(2);
+
+    // Payment method bars
+    const maxRev = Math.max(summary.btc_revenue, summary.xmr_revenue, summary.cash_revenue, 1);
+    document.getElementById('finBarBtc').style.width = (summary.btc_revenue / maxRev * 100) + '%';
+    document.getElementById('finBarXmr').style.width = (summary.xmr_revenue / maxRev * 100) + '%';
+    document.getElementById('finBarCash').style.width = (summary.cash_revenue / maxRev * 100) + '%';
+    document.getElementById('finValBtc').textContent = '$' + summary.btc_revenue.toFixed(2);
+    document.getElementById('finValXmr').textContent = '$' + summary.xmr_revenue.toFixed(2);
+    document.getElementById('finValCash').textContent = '$' + summary.cash_revenue.toFixed(2);
+
+    // Daily chart
+    const chartEl = document.getElementById('finDailyChart');
+    if (summary.daily_revenue && summary.daily_revenue.length > 0) {
+      const maxDay = Math.max(...summary.daily_revenue.map(d => parseFloat(d.revenue)), 1);
+      chartEl.innerHTML = summary.daily_revenue.map(d => {
+        const pct = (parseFloat(d.revenue) / maxDay * 100);
+        const dayLabel = new Date(d.day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        return `<div class="chart-bar">
+          <div class="bar-value">$${parseFloat(d.revenue).toFixed(0)}</div>
+          <div class="bar-fill" style="height:${Math.max(pct, 2)}%"></div>
+          <div class="bar-label">${dayLabel}</div>
+        </div>`;
+      }).join('');
+    } else {
+      chartEl.innerHTML = '<div style="color:var(--text-muted);text-align:center;width:100%;padding:40px">No revenue data for this period</div>';
+    }
+
+    // Top products
+    document.getElementById('finTopProducts').innerHTML = summary.top_products.length === 0
+      ? '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px">No sales data</td></tr>'
+      : summary.top_products.map(p => `<tr>
+          <td>${esc(p.product_name)}</td>
+          <td>${p.total_qty}</td>
+          <td style="color:var(--green);font-weight:600">$${parseFloat(p.total_rev).toFixed(2)}</td>
+        </tr>`).join('');
+
+    // Load transactions
+    loadTransactions();
+  } catch (err) { console.error('Finance load error:', err); }
+}
+
+async function loadTransactions() {
+  const type = document.getElementById('txFilterType').value;
+  const days = document.getElementById('txFilterDays').value;
+  try {
+    const data = await api(`/api/finance?action=transactions&type=${type}&days=${days}`);
+    document.getElementById('finTxTable').innerHTML = data.transactions.length === 0
+      ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px">No transactions</td></tr>'
+      : data.transactions.map(t => `<tr>
+          <td style="color:var(--text-dim);font-size:.82rem">${new Date(t.created_at).toLocaleString()}</td>
+          <td><span class="tx-type-${t.type === 'cash_in' ? 'in' : 'out'}">${t.type === 'cash_in' ? 'IN' : 'OUT'}</span></td>
+          <td class="tx-type-${t.type === 'cash_in' ? 'in' : 'out'}">${t.type === 'cash_in' ? '+' : '-'}$${parseFloat(t.amount).toFixed(2)}</td>
+          <td>${esc(t.description || '—')}</td>
+          <td style="color:var(--text-dim);font-size:.82rem">${esc(t.created_by_name || 'System')}</td>
+        </tr>`).join('');
+  } catch (err) { console.error(err); }
+}
+
+async function logCashTx(type) {
+  const amount = parseFloat(document.getElementById('cashTxAmount').value);
+  const description = document.getElementById('cashTxDesc').value.trim();
+  if (!amount || amount <= 0) { toast('Enter a valid amount', true); return; }
+  try {
+    await api('/api/finance', { method: 'POST', body: JSON.stringify({ type, amount, description }) });
+    document.getElementById('cashTxAmount').value = '';
+    document.getElementById('cashTxDesc').value = '';
+    toast(type === 'cash_in' ? 'Cash In logged' : 'Cash Out logged');
+    loadFinance(currentFinancePeriod);
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+// Settings
+async function loadSettings() {
+  try {
+    const s = await api('/api/settings');
+    document.getElementById('setStoreName').value = s.store_name || '';
+    document.getElementById('setTagline').value = s.store_tagline || '';
+    document.getElementById('setEmail').value = s.store_email || '';
+    document.getElementById('setPhone').value = s.store_phone || '';
+    document.getElementById('setStoreDesc').value = s.store_description || '';
+    document.getElementById('setShipping').value = s.shipping_flat_rate || '5.99';
+    document.getElementById('setFreeShip').value = s.free_shipping_threshold || '75';
+    document.getElementById('setTax').value = s.tax_rate || '0';
+    document.getElementById('setAgeVerify').value = s.age_verification || 'true';
+    document.getElementById('setWalletBtc').value = s.wallet_btc || '';
+    document.getElementById('setWalletXmr').value = s.wallet_xmr || '';
+    document.getElementById('setCryptoEnabled').value = s.payment_crypto_enabled || 'true';
+    document.getElementById('setCashEnabled').value = s.payment_cash_enabled || 'true';
+    document.getElementById('setDeliveryEnabled').value = s.delivery_enabled || 'true';
+    document.getElementById('setDeliveryBoroughs').value = s.delivery_boroughs || 'Manhattan,Brooklyn,Queens,Bronx,Staten Island';
+    document.getElementById('setOpeningCash').value = s.opening_cash_balance || '0';
+    document.getElementById('setCashFloat').value = s.cash_float_amount || '200';
+  } catch (err) { console.error(err); }
+}
+
+async function saveSettings() {
+  try {
+    await api('/api/settings', { method: 'PUT', body: JSON.stringify({
+      store_name: document.getElementById('setStoreName').value,
+      store_tagline: document.getElementById('setTagline').value,
+      store_email: document.getElementById('setEmail').value,
+      store_phone: document.getElementById('setPhone').value,
+      store_description: document.getElementById('setStoreDesc').value,
+      shipping_flat_rate: document.getElementById('setShipping').value,
+      free_shipping_threshold: document.getElementById('setFreeShip').value,
+      tax_rate: document.getElementById('setTax').value,
+      age_verification: document.getElementById('setAgeVerify').value,
+      wallet_btc: document.getElementById('setWalletBtc').value,
+      wallet_xmr: document.getElementById('setWalletXmr').value,
+      payment_crypto_enabled: document.getElementById('setCryptoEnabled').value,
+      payment_cash_enabled: document.getElementById('setCashEnabled').value,
+      delivery_enabled: document.getElementById('setDeliveryEnabled').value,
+      delivery_boroughs: document.getElementById('setDeliveryBoroughs').value,
+      opening_cash_balance: document.getElementById('setOpeningCash').value,
+      cash_float_amount: document.getElementById('setCashFloat').value
+    })});
+    toast('Settings saved!');
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+// Utils
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function toast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = isError ? 'var(--danger)' : 'var(--green)';
+  el.style.color = isError ? '#fff' : '#000';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

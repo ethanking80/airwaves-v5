@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIRWAVES — My Account</title>
+<link rel="icon" type="image/jpeg" href="/images/logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a12;--surface:#12121e;--surface2:#1a1a2e;--surface3:#22223a;
+  --green:#39ff14;--green-dim:#2bcc10;--purple:#8b5cf6;
+  --blue:#06b6d4;--text:#e8e8f0;--text-dim:#9898a8;--text-muted:#58586a;
+  --danger:#ef4444;--warning:#f59e0b;--success:#22c55e;
+  --radius:12px;--radius-sm:8px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+a{color:var(--green);text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
+input,select,textarea{font-family:inherit;background:var(--surface2);color:var(--text);border:1px solid var(--surface3);border-radius:var(--radius-sm);padding:12px 16px;width:100%;outline:none;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--green)}
+
+header{position:sticky;top:0;z-index:100;background:rgba(10,10,18,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--surface3);padding:0 24px}
+.header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo-area{display:flex;align-items:center;gap:12px;cursor:pointer;text-decoration:none}
+.logo-area img{width:42px;height:42px;border-radius:50%;object-fit:cover}
+.logo-area span{font-family:'Archivo Black',sans-serif;font-size:1.3rem;background:linear-gradient(135deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.back-btn{background:transparent;color:var(--text-dim);padding:8px 14px;border-radius:var(--radius-sm);font-size:.88rem;font-weight:500;transition:all .2s;border:1px solid var(--surface3)}
+.back-btn:hover{color:var(--green);border-color:var(--green)}
+
+.page{max-width:800px;margin:0 auto;padding:48px 24px 80px}
+
+.profile-header{display:flex;align-items:center;gap:24px;margin-bottom:40px}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:1.8rem;color:#000;flex-shrink:0}
+.profile-header-info h1{font-family:'Archivo Black',sans-serif;font-size:1.6rem;line-height:1.2}
+.profile-header-info .user-id{font-size:.82rem;color:var(--text-muted);font-family:'DM Sans',monospace;margin-top:2px}
+.profile-header-info .member-since{font-size:.82rem;color:var(--text-dim);margin-top:4px}
+
+.section{background:var(--surface);border:1px solid var(--surface2);border-radius:var(--radius);padding:28px;margin-bottom:20px}
+.section h2{font-family:'Archivo Black',sans-serif;font-size:1.1rem;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--surface2);display:flex;align-items:center;gap:10px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-grid .full{grid-column:1/-1}
+.field{margin-bottom:0}
+.field label{display:block;font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em}
+.field input[readonly]{opacity:.6;cursor:not-allowed}
+
+.btn{padding:12px 28px;border-radius:var(--radius);font-weight:700;font-size:.9rem;transition:all .25s;display:inline-flex;align-items:center;gap:8px;letter-spacing:.02em}
+.btn-primary{background:var(--green);color:#000}
+.btn-primary:hover{background:var(--green-dim);transform:translateY(-1px);box-shadow:0 4px 20px rgba(57,255,20,.3)}
+.btn-outline{background:transparent;border:2px solid var(--surface3);color:var(--text-dim)}
+.btn-outline:hover{border-color:var(--green);color:var(--green)}
+
+.orders-list .order-card{background:var(--surface2);border:1px solid var(--surface3);border-radius:var(--radius-sm);padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;transition:border-color .2s}
+.orders-list .order-card:hover{border-color:var(--surface3)}
+.order-card .order-left{display:flex;flex-direction:column;gap:2px}
+.order-card .order-id{font-weight:700;font-size:.92rem}
+.order-card .order-date{font-size:.8rem;color:var(--text-muted)}
+.order-card .order-right{text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.order-card .order-total{color:var(--green);font-weight:700;font-size:1rem}
+.status-badge{font-size:.72rem;padding:3px 10px;border-radius:50px;font-weight:600}
+.status-pending{background:rgba(245,158,11,.12);color:var(--warning)}
+.status-shipped{background:rgba(6,182,212,.12);color:var(--blue)}
+.status-delivered{background:rgba(34,197,94,.12);color:var(--success)}
+.status-cancelled{background:rgba(239,68,68,.12);color:var(--danger)}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#000;padding:12px 24px;border-radius:var(--radius);font-weight:700;font-size:.88rem;z-index:999;transition:transform .3s;box-shadow:0 8px 30px rgba(57,255,20,.3)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.spinner{width:36px;height:36px;border:3px solid var(--surface3);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin:80px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+footer{background:var(--surface);border-top:1px solid var(--surface2);padding:32px 24px;text-align:center}
+footer .brand{font-family:'Archivo Black',sans-serif;font-size:1rem;color:var(--green);margin-bottom:6px}
+footer p{color:var(--text-muted);font-size:.8rem}
+
+@media(max-width:600px){
+  .form-grid{grid-template-columns:1fr}
+  .profile-header{flex-direction:column;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo-area" href="/">
+      <img src="/images/logo.jpg" alt="AIRWAVES">
+      <span>AIRWAVES</span>
+    </a>
+    <button class="back-btn" onclick="window.location.href='/'">← Back to Shop</button>
+  </div>
+</header>
+
+<div class="page" id="pageContent">
+  <div class="spinner" id="spinner"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <div class="brand">((( AIRWAVES )))</div>
+  <p>Premium hemp products, lab-tested for quality and compliance.</p>
+  <p style="margin-top:4px">All products contain less than 0.3% THC. &copy; 2026 AIRWAVES v4.3.1</p>
+</footer>
+
+<script>
+let profile = null;
+let authToken = localStorage.getItem('aw_token');
+
+async function api(path, options = {}) {
+  const opts = { headers: { 'Content-Type': 'application/json' }, ...options };
+  if (authToken) opts.headers['Authorization'] = 'Bearer ' + authToken;
+  const res = await fetch(path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return parts[0][0].toUpperCase();
+}
+
+function getFirstName(name) {
+  if (!name) return '';
+  return name.trim().split(/\s+/)[0];
+}
+
+async function init() {
+  if (!authToken) {
+    window.location.href = '/';
+    return;
+  }
+
+  try {
+    profile = await api('/api/profile');
+    document.title = 'AIRWAVES — ' + getFirstName(profile.name) + "'s Account";
+    render();
+    loadOrders();
+  } catch (err) {
+    localStorage.removeItem('aw_token');
+    window.location.href = '/';
+  }
+}
+
+function render() {
+  const page = document.getElementById('pageContent');
+  const initials = getInitials(profile.name);
+  const memberDate = profile.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '';
+
+  page.innerHTML = `
+    <div class="profile-header">
+      <div class="profile-avatar">${initials}</div>
+      <div class="profile-header-info">
+        <h1>${esc(profile.name)}</h1>
+        <div class="user-id">${esc(profile.user_id || '')}</div>
+        <div class="member-since">Member since ${memberDate}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Personal Information</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label>Full Name</label>
+          <input type="text" id="profName" value="${esc(profile.name || '')}">
+        </div>
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="profUsername" value="${esc(profile.username || '')}" placeholder="Choose a username">
+          <small style="color:var(--text-muted);font-size:.72rem;margin-top:2px;display:block">Used for login. Letters, numbers, dots, hyphens, underscores.</small>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="profEmail" value="${esc(profile.email || '')}" readonly>
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input type="tel" id="profPhone" value="${esc(profile.phone || '')}" placeholder="(555) 123-4567">
+        </div>
+        <div class="field">
+          <label>Customer ID</label>
+          <input type="text" value="${esc(profile.user_id || '')}" readonly>
+        </div>
+        <div class="field">
+          <label>Role</label>
+          <input type="text" value="${profile.role === 'admin' ? 'Administrator' : 'Customer'}" readonly style="color:${profile.role === 'admin' ? 'var(--green)' : 'var(--text-dim)'}">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Change Password</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label>Current Password</label>
+          <input type="password" id="profCurrentPw" placeholder="Enter current password">
+        </div>
+        <div class="field">
+          <label>New Password</label>
+          <input type="password" id="profNewPw" placeholder="Min 6 characters">
+        </div>
+        <div class="field">
+          <label>Confirm New Password</label>
+          <input type="password" id="profConfirmPw" placeholder="Re-enter new password">
+        </div>
+      </div>
+      <button class="btn btn-outline" onclick="changePassword()" style="margin-top:16px">Update Password</button>
+    </div>
+
+    <div class="section">
+      <h2>Shipping Address</h2>
+      <div class="form-grid">
+        <div class="field full">
+          <label>Street Address</label>
+          <input type="text" id="profAddress" value="${esc(profile.shipping_address || '')}" placeholder="123 Main Street, Apt 4B">
+        </div>
+        <div class="field">
+          <label>City</label>
+          <input type="text" id="profCity" value="${esc(profile.city || '')}" placeholder="New York">
+        </div>
+        <div class="field">
+          <label>State</label>
+          <input type="text" id="profState" value="${esc(profile.state || '')}" placeholder="NY">
+        </div>
+        <div class="field">
+          <label>ZIP Code</label>
+          <input type="text" id="profZip" value="${esc(profile.zip_code || '')}" placeholder="10001">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px">
+      <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+      <button class="btn btn-outline" onclick="window.location.href='/'">Back to Shop</button>
+    </div>
+
+    <div class="section">
+      <h2>Order History</h2>
+      <div class="orders-list" id="ordersList">
+        <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading orders...</div>
+      </div>
+    </div>
+  `;
+}
+
+async function saveProfile() {
+  try {
+    const body = {
+      name: document.getElementById('profName').value.trim(),
+      username: document.getElementById('profUsername').value.trim(),
+      phone: document.getElementById('profPhone').value.trim(),
+      shipping_address: document.getElementById('profAddress').value.trim(),
+      city: document.getElementById('profCity').value.trim(),
+      state: document.getElementById('profState').value.trim(),
+      zip_code: document.getElementById('profZip').value.trim()
+    };
+    if (!body.name) { toast('Name is required', true); return; }
+    const result = await api('/api/profile', { method: 'PUT', body: JSON.stringify(body) });
+    profile = result.user;
+
+    // Re-generate token with updated name so header reflects changes
+    const loginData = await api('/api/auth?action=me');
+    if (loginData.user) {
+      profile = loginData.user;
+    }
+
+    render();
+    loadOrders();
+    toast('Profile saved!');
+  } catch (err) {
+    toast('Error: ' + err.message, true);
+  }
+}
+
+async function loadOrders() {
+  try {
+    const orders = await api('/api/orders');
+    const el = document.getElementById('ordersList');
+    if (!orders || orders.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">No orders yet. <a href="/">Start shopping</a></div>';
+      return;
+    }
+    el.innerHTML = orders.map(o => `
+      <div class="order-card">
+        <div class="order-left">
+          <span class="order-id">Order #${o.id}</span>
+          <span class="order-date">${new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+        </div>
+        <div class="order-right">
+          <span class="order-total">$${parseFloat(o.total).toFixed(2)}</span>
+          <span class="status-badge status-${o.status}">${o.status}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch {
+    document.getElementById('ordersList').innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">Unable to load orders.</div>';
+  }
+}
+
+async function changePassword() {
+  const current = document.getElementById('profCurrentPw').value;
+  const newPw = document.getElementById('profNewPw').value;
+  const confirm = document.getElementById('profConfirmPw').value;
+  if (!current) { toast('Enter your current password', true); return; }
+  if (newPw.length < 6) { toast('New password must be at least 6 characters', true); return; }
+  if (newPw !== confirm) { toast('New passwords do not match', true); return; }
+  try {
+    await api('/api/auth?action=change-password', { method: 'POST', body: JSON.stringify({ current_password: current, new_password: newPw }) });
+    document.getElementById('profCurrentPw').value = '';
+    document.getElementById('profNewPw').value = '';
+    document.getElementById('profConfirmPw').value = '';
+    toast('Password updated!');
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function toast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = isError ? 'var(--danger)' : 'var(--green)';
+  el.style.color = isError ? '#fff' : '#000';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+init();
+</script>
+</body>
+</html>
