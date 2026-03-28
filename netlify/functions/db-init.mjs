@@ -175,6 +175,8 @@ export default async (req, context) => {
     await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS session_id VARCHAR(100)`;
     await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number VARCHAR(50)`;
 
+    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS device_info VARCHAR(200)`;
+
     // Order items migrations
     await sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS price DECIMAL(10,2)`;
 

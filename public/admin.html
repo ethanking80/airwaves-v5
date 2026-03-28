@@ -274,7 +274,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="view" id="ordersView">
       <div class="section-header"><h2>Orders</h2></div>
       <div class="table-wrap">
-        <table><thead><tr><th>ID</th><th>Customer</th><th>Total</th><th>Payment</th><th>Delivery</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <table><thead><tr><th>ID</th><th>Customer</th><th>Total</th><th>Payment</th><th>Delivery</th><th>Device</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
         <tbody id="ordersTable"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px">Loading...</td></tr></tbody></table>
       </div>
     </div>
@@ -894,16 +894,18 @@ async function loadOrders() {
   try {
     allOrders = await api('/api/orders?all=true');
     document.getElementById('ordersTable').innerHTML = allOrders.length === 0
-      ? '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:30px">No orders</td></tr>'
+      ? '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:30px">No orders</td></tr>'
       : allOrders.map(o => {
           const payLabel = o.payment_method === 'btc' ? '₿ BTC' : o.payment_method === 'xmr' ? 'ɱ XMR' : o.payment_method === 'cash' ? '💵 Cash' : o.payment_method || '—';
           const delLabel = o.delivery_type === 'delivery' ? '🚗 ' + (o.delivery_borough || 'NYC') : '📦 Ship';
+          const devLabel = o.device_info ? esc(o.device_info) : '<span style="color:var(--text-muted)">—</span>';
           return `<tr>
           <td>#${o.id}</td>
           <td>${esc(o.customer_name || 'N/A')}<br><span style="font-size:.75rem;color:var(--text-muted)">${esc(o.customer_email || '')}</span></td>
           <td style="color:var(--green);font-weight:600">$${parseFloat(o.total).toFixed(2)}</td>
           <td style="font-size:.82rem">${payLabel}</td>
           <td style="font-size:.82rem">${delLabel}</td>
+          <td style="font-size:.75rem;color:var(--text-dim)">${devLabel}</td>
           <td><span class="status-badge status-${o.status}">${o.status}</span></td>
           <td style="color:var(--text-dim);font-size:.82rem">${new Date(o.created_at).toLocaleDateString()}</td>
           <td>

@@ -56,7 +56,7 @@ export default async (req, context) => {
     // POST - create order from cart
     if (req.method === 'POST') {
       const sessionId = getSessionId(req);
-      const { customer_name, customer_email, shipping_address, payment_method, delivery_type, delivery_borough } = await req.json();
+      const { customer_name, customer_email, shipping_address, payment_method, delivery_type, delivery_borough, device_info } = await req.json();
 
       if (!payment_method) {
         return new Response(JSON.stringify({ error: 'Payment method is required' }), { status: 400, headers });
@@ -76,8 +76,8 @@ export default async (req, context) => {
 
       // Create order
       const [order] = await sql`
-        INSERT INTO orders (session_id, total, customer_name, customer_email, shipping_address, status, payment_method, delivery_type, delivery_borough, payment_status)
-        VALUES (${sessionId}, ${total.toFixed(2)}, ${customer_name || ''}, ${customer_email || ''}, ${shipping_address || ''}, 'pending', ${payment_method}, ${delivery_type || 'delivery'}, ${delivery_borough || ''}, 'pending')
+        INSERT INTO orders (session_id, total, customer_name, customer_email, shipping_address, status, payment_method, delivery_type, delivery_borough, payment_status, device_info)
+        VALUES (${sessionId}, ${total.toFixed(2)}, ${customer_name || ''}, ${customer_email || ''}, ${shipping_address || ''}, 'pending', ${payment_method}, ${delivery_type || 'delivery'}, ${delivery_borough || ''}, 'pending', ${device_info || ''})
         RETURNING *
       `;
 
