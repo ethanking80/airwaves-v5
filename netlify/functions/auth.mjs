@@ -53,18 +53,18 @@ export default async (req, context) => {
   try {
     if (req.method === 'POST' && action === 'register') {
       const { email, password, name, username } = await req.json();
-      if (!email || !password || !name) {
-        return new Response(JSON.stringify({ error: 'Email, password, and name are required' }), { status: 400, headers });
+      if (!email || !password || !name || !username) {
+        return new Response(JSON.stringify({ error: 'Username, email, password, and name are all required' }), { status: 400, headers });
       }
       if (password.length < 6) {
         return new Response(JSON.stringify({ error: 'Password must be at least 6 characters' }), { status: 400, headers });
       }
-      // Validate username if provided
-      const cleanUsername = username ? username.trim().toLowerCase() : null;
-      if (cleanUsername) {
-        if (cleanUsername.length < 3) {
-          return new Response(JSON.stringify({ error: 'Username must be at least 3 characters' }), { status: 400, headers });
-        }
+      // Validate username
+      const cleanUsername = username.trim().toLowerCase();
+      if (cleanUsername.length < 3) {
+        return new Response(JSON.stringify({ error: 'Username must be at least 3 characters' }), { status: 400, headers });
+      }
+      {
         if (!/^[a-z0-9_.-]+$/.test(cleanUsername)) {
           return new Response(JSON.stringify({ error: 'Username can only contain letters, numbers, dots, hyphens, and underscores' }), { status: 400, headers });
         }

@@ -1726,14 +1726,16 @@ function showAuth(mode) {
 
   let fields = '';
   if (mode === 'register') {
-    fields += '<div class="field"><label>Full Name</label><input type="text" id="authName" placeholder="Your name" autocomplete="name"></div>';
-    fields += '<div class="field"><label>Username</label><input type="text" id="authUsername" placeholder="Choose a username" autocomplete="username" oninput="validateUsername(this)"><small id="usernameHint" style="color:var(--text-muted);font-size:.75rem;margin-top:4px;display:block">Letters, numbers, dots, hyphens, underscores. Min 3 chars.</small></div>';
-    fields += '<div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="your@email.com" autocomplete="email"></div>';
-    fields += '<div class="field"><label>Password</label><input type="password" id="authPassword" placeholder="Min 6 characters" autocomplete="new-password" oninput="showPasswordStrength(this)"><div id="pwStrength" style="margin-top:6px;display:none"><div style="height:4px;border-radius:2px;background:var(--surface3);overflow:hidden"><div id="pwStrengthBar" style="height:100%;width:0%;transition:all .3s;border-radius:2px"></div></div><small id="pwStrengthLabel" style="font-size:.72rem;margin-top:2px;display:block"></small></div></div>';
-    fields += '<div class="field"><label>Confirm Password</label><input type="password" id="authPasswordConfirm" placeholder="Re-enter password" autocomplete="new-password"></div>';
+    fields += '<div class="field"><label>Full Name</label><input type="text" id="authName" placeholder="Your full name" autocomplete="name"></div>';
+    fields += '<div class="field"><label>Username <span style="color:var(--danger)">*</span></label><input type="text" id="authUsername" placeholder="Choose a unique username" autocomplete="username" oninput="validateUsername(this)"><small id="usernameHint" style="color:var(--text-muted);font-size:.75rem;margin-top:4px;display:block">Required. Letters, numbers, dots, hyphens, underscores. Min 3 chars.</small></div>';
+    fields += '<div class="field"><label>Email <span style="color:var(--danger)">*</span></label><input type="email" id="authRegEmail" placeholder="your@email.com" autocomplete="email"></div>';
+    fields += '<div class="field"><label>Password <span style="color:var(--danger)">*</span></label><input type="password" id="authPassword" placeholder="Min 6 characters" autocomplete="new-password" oninput="showPasswordStrength(this)"><div id="pwStrength" style="margin-top:6px;display:none"><div style="height:4px;border-radius:2px;background:var(--surface3);overflow:hidden"><div id="pwStrengthBar" style="height:100%;width:0%;transition:all .3s;border-radius:2px"></div></div><small id="pwStrengthLabel" style="font-size:.72rem;margin-top:2px;display:block"></small></div></div>';
+    fields += '<div class="field"><label>Confirm Password <span style="color:var(--danger)">*</span></label><input type="password" id="authPasswordConfirm" placeholder="Re-enter password" autocomplete="new-password"></div>';
   } else {
-    fields += '<div class="field"><label>Username or Email</label><input type="text" id="authEmail" placeholder="username or email" autocomplete="username"></div>';
-    fields += '<div class="field"><label>Password</label><input type="password" id="authPassword" placeholder="********" autocomplete="current-password"></div>';
+    fields += '<div class="field"><label>Username</label><input type="text" id="authLoginUsername" placeholder="Your username" autocomplete="username"></div>';
+    fields += '<div class="field"><label>Password</label><input type="password" id="authPassword" placeholder="Your password" autocomplete="current-password"></div>';
+    fields += '<div style="margin-top:-4px;margin-bottom:8px"><small style="color:var(--text-muted);font-size:.75rem">You can also sign in with your <a href="#" onclick="event.preventDefault();toggleLoginEmail()" style="color:var(--blue);text-decoration:none" id="loginEmailToggle">email address</a></small></div>';
+    fields += '<div class="field" id="loginEmailField" style="display:none"><label>Email</label><input type="email" id="authLoginEmail" placeholder="your@email.com" autocomplete="email"></div>';
   }
   document.getElementById('authFields').innerHTML = fields;
 
@@ -1744,7 +1746,7 @@ function showAuth(mode) {
 
   modal.classList.add('show');
   document.body.style.overflow = 'hidden';
-  setTimeout(() => { const el = document.getElementById(mode === 'register' ? 'authName' : 'authEmail'); if (el) el.focus(); }, 100);
+  setTimeout(() => { const el = document.getElementById(mode === 'register' ? 'authName' : 'authLoginUsername'); if (el) el.focus(); }, 100);
 }
 
 function closeAuth() {
@@ -1786,31 +1788,47 @@ function showPasswordStrength(input) {
   label.style.color = level.c; label.textContent = level.t;
 }
 
+function toggleLoginEmail() {
+  const emailField = document.getElementById('loginEmailField');
+  const toggle = document.getElementById('loginEmailToggle');
+  if (emailField.style.display === 'none') {
+    emailField.style.display = '';
+    toggle.textContent = 'hide email';
+  } else {
+    emailField.style.display = 'none';
+    document.getElementById('authLoginEmail').value = '';
+    toggle.textContent = 'email address';
+  }
+}
+
 async function submitAuth() {
-  const loginField = document.getElementById('authEmail')?.value.trim();
   const password = document.getElementById('authPassword')?.value;
   const errEl = document.getElementById('authError');
   errEl.style.display = 'none';
-
-  if (!loginField || !password) { errEl.textContent = 'Please fill in all fields'; errEl.style.display = 'block'; return; }
 
   try {
     let data;
     if (authMode === 'register') {
       const name = document.getElementById('authName')?.value.trim();
       const username = document.getElementById('authUsername')?.value.trim();
+      const email = document.getElementById('authRegEmail')?.value.trim();
       const confirmPw = document.getElementById('authPasswordConfirm')?.value;
       if (!name) { errEl.textContent = 'Please enter your name'; errEl.style.display = 'block'; return; }
-      if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
+      if (!username) { errEl.textContent = 'Username is required'; errEl.style.display = 'block'; return; }
+      if (username.length < 3) { errEl.textContent = 'Username must be at least 3 characters'; errEl.style.display = 'block'; return; }
+      if (!/^[a-zA-Z0-9_.-]+$/.test(username)) { errEl.textContent = 'Username can only contain letters, numbers, dots, hyphens, underscores'; errEl.style.display = 'block'; return; }
+      if (!email) { errEl.textContent = 'Email is required'; errEl.style.display = 'block'; return; }
+      if (!password || password.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
       if (password !== confirmPw) { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
-      if (username && username.length < 3) { errEl.textContent = 'Username must be at least 3 characters'; errEl.style.display = 'block'; return; }
-      data = await api('/api/auth?action=register', { method: 'POST', body: JSON.stringify({ email: loginField, password, name, username: username || undefined }) });
+      data = await api('/api/auth?action=register', { method: 'POST', body: JSON.stringify({ email, password, name, username }) });
     } else {
-      // Login supports username or email
-      const isEmail = loginField.includes('@');
+      const username = document.getElementById('authLoginUsername')?.value.trim();
+      const email = document.getElementById('authLoginEmail')?.value.trim();
+      if (!username && !email) { errEl.textContent = 'Please enter your username'; errEl.style.display = 'block'; return; }
+      if (!password) { errEl.textContent = 'Please enter your password'; errEl.style.display = 'block'; return; }
       data = await api('/api/auth?action=login', { method: 'POST', body: JSON.stringify({
-        email: isEmail ? loginField : undefined,
-        username: isEmail ? undefined : loginField,
+        username: username || undefined,
+        email: email || undefined,
         password
       }) });
     }

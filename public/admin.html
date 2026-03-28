@@ -175,12 +175,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <p class="sub">Sign in to manage your store</p>
     <div id="loginForm">
       <div class="field">
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@airwaves.com">
+        <label>Username</label>
+        <input type="text" id="loginUsername" placeholder="Your username" autocomplete="username">
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="btn btn-primary" onclick="doLogin()" style="width:100%;justify-content:center;margin-top:8px">Sign In</button>
       <div class="error" id="loginError"></div>
@@ -191,8 +191,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <!-- Register form (hidden by default) -->
     <div id="registerForm" style="display:none">
       <div class="field">
-        <label>Name</label>
-        <input type="text" id="regName" placeholder="Your name">
+        <label>Full Name</label>
+        <input type="text" id="regName" placeholder="Your full name">
+      </div>
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="regUsername" placeholder="Choose a username" autocomplete="username">
       </div>
       <div class="field">
         <label>Email</label>
@@ -200,7 +204,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="password" id="regPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()">
+        <input type="password" id="regPassword" placeholder="Min 6 characters" onkeydown="if(event.key==='Enter')doRegister()">
       </div>
       <button class="btn btn-primary" onclick="doRegister()" style="width:100%;justify-content:center;margin-top:8px">Create Account</button>
       <div class="error" id="regError"></div>
@@ -556,13 +560,13 @@ function toggleAuthMode() {
 }
 
 async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
+  const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginError');
   errEl.style.display = 'none';
-  if (!email || !password) { errEl.textContent = 'Please fill in all fields'; errEl.style.display = 'block'; return; }
+  if (!username || !password) { errEl.textContent = 'Please enter your username and password'; errEl.style.display = 'block'; return; }
   try {
-    const data = await api('/api/auth?action=login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    const data = await api('/api/auth?action=login', { method: 'POST', body: JSON.stringify({ username, password }) });
     if (data.user.role !== 'admin' && data.user.role !== 'site_admin') { errEl.textContent = 'Access denied. Admin accounts only.'; errEl.style.display = 'block'; return; }
     adminToken = data.token;
     localStorage.setItem('aw_admin_token', data.token);
@@ -574,13 +578,16 @@ async function doLogin() {
 
 async function doRegister() {
   const name = document.getElementById('regName').value.trim();
+  const username = document.getElementById('regUsername').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
   const errEl = document.getElementById('regError');
   errEl.style.display = 'none';
-  if (!name || !email || !password) { errEl.textContent = 'Please fill in all fields'; errEl.style.display = 'block'; return; }
+  if (!name || !username || !email || !password) { errEl.textContent = 'All fields are required'; errEl.style.display = 'block'; return; }
+  if (username.length < 3) { errEl.textContent = 'Username must be at least 3 characters'; errEl.style.display = 'block'; return; }
+  if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
   try {
-    const data = await api('/api/auth?action=register', { method: 'POST', body: JSON.stringify({ email, password, name }) });
+    const data = await api('/api/auth?action=register', { method: 'POST', body: JSON.stringify({ email, password, name, username }) });
     // New registrations are customers by default - inform user
     errEl.textContent = 'Account created! However, admin access requires an admin role. Please contact the site owner.';
     errEl.style.display = 'block';
