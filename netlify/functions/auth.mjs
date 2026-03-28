@@ -147,6 +147,65 @@ export default async (req, context) => {
       return new Response(JSON.stringify({ success: true, message: 'Password changed successfully' }), { status: 200, headers });
     }
 
+    // Forgot password — send reset email
+    if (req.method === 'POST' && action === 'forgot-password') {
+      const { email } = await req.json();
+      if (!email) {
+        return new Response(JSON.stringify({ error: 'Email is required' }), { status: 400, headers });
+      }
+      const [user] = await sql`SELECT id, email, name FROM users WHERE email = ${email.toLowerCase()}`;
+      if (!user) {
+        return new Response(JSON.stringify({ success: true, message: 'If an account with that email exists, a reset link has been sent.' }), { status: 200, headers });
+      }
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await sql`UPDATE password_reset_tokens SET used = true WHERE user_id = ${user.id} AND used = false`;
+      await sql`INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (${user.id}, ${resetToken}, ${expiresAt.toISOString()})`;
+      const origin = new URL(req.url).origin;
+      const resetUrl = `${origin}/reset-password.html?token=${resetToken}`;
+      const resendKey = process.env.RESEND_API_KEY;
+      if (!resendKey) {
+        return new Response(JSON.stringify({ error: 'Email service not configured. Please contact support.' }), { status: 500, headers });
+      }
+      const storeNameRow = await sql`SELECT value FROM settings WHERE key = 'store_name'`;
+      const storeName = storeNameRow[0]?.value || 'AIRWAVES';
+      const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@airwaves.shop';
+      const emailRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: `${storeName} <${fromEmail}>`,
+          to: [user.email],
+          subject: `${storeName} — Reset Your Password`,
+          html: `<div style="max-width:500px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a12;color:#e8e8f0;padding:40px 32px;border-radius:12px"><div style="text-align:center;margin-bottom:32px"><h1 style="color:#39ff14;font-size:24px;margin:0 0 8px">${storeName}</h1><p style="color:#9898a8;margin:0;font-size:14px">Password Reset Request</p></div><p style="font-size:15px;line-height:1.6">Hi ${user.name},</p><p style="font-size:15px;line-height:1.6">We received a request to reset your password. Click the button below to create a new one:</p><div style="text-align:center;margin:32px 0"><a href="${resetUrl}" style="background:#39ff14;color:#000;padding:14px 36px;border-radius:8px;font-weight:700;text-decoration:none;font-size:15px;display:inline-block">Reset Password</a></div><p style="font-size:13px;color:#9898a8;line-height:1.5">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p><hr style="border:none;border-top:1px solid #22223a;margin:24px 0"><p style="font-size:12px;color:#58586a;text-align:center;margin:0">Or copy this URL:<br><span style="color:#06b6d4;word-break:break-all">${resetUrl}</span></p></div>`
+        })
+      });
+      if (!emailRes.ok) {
+        console.error('Resend error:', await emailRes.text());
+        return new Response(JSON.stringify({ error: 'Failed to send reset email. Please try again.' }), { status: 500, headers });
+      }
+      return new Response(JSON.stringify({ success: true, message: 'If an account with that email exists, a reset link has been sent.' }), { status: 200, headers });
+    }
+
+    // Reset password with token
+    if (req.method === 'POST' && action === 'reset-password') {
+      const { token, new_password } = await req.json();
+      if (!token || !new_password) {
+        return new Response(JSON.stringify({ error: 'Token and new password are required' }), { status: 400, headers });
+      }
+      if (new_password.length < 6) {
+        return new Response(JSON.stringify({ error: 'Password must be at least 6 characters' }), { status: 400, headers });
+      }
+      const [resetRecord] = await sql`SELECT * FROM password_reset_tokens WHERE token = ${token} AND used = false AND expires_at > NOW()`;
+      if (!resetRecord) {
+        return new Response(JSON.stringify({ error: 'Invalid or expired reset link. Please request a new one.' }), { status: 400, headers });
+      }
+      const newHash = hashPassword(new_password);
+      await sql`UPDATE users SET password_hash = ${newHash} WHERE id = ${resetRecord.user_id}`;
+      await sql`UPDATE password_reset_tokens SET used = true WHERE id = ${resetRecord.id}`;
+      return new Response(JSON.stringify({ success: true, message: 'Password has been reset. You can now sign in.' }), { status: 200, headers });
+    }
+
     return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400, headers });
   } catch (error) {
     console.error('Auth Error:', error);

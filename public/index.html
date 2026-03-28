@@ -438,7 +438,7 @@ footer{background:var(--surface);border-top:1px solid var(--surface2);padding:0}
         </button>
         <div class="user-menu">
           <!-- Logged out state -->
-          <button onclick="handleUserClick()" id="navUserBtn" class="nav-login-btn">Account</button>
+          <button onclick="handleUserClick()" id="navUserBtn" class="nav-login-btn">Sign In</button>
           <!-- Logged in state -->
           <div class="user-area" id="navUserArea" style="display:none" onclick="handleUserClick()">
             <div class="user-avatar" id="userAvatar"></div>
@@ -864,6 +864,16 @@ footer{background:var(--surface);border-top:1px solid var(--surface2);padding:0}
       <div class="switch-mode">
         <span id="authSwitch"></span>
       </div>
+    <!-- Forgot Password view (toggled in) -->
+    <div id="authForgotView" style="display:none">
+      <h3>Forgot Password</h3>
+      <p class="subtitle">Enter your email and we'll send a reset link</p>
+      <div class="field"><label>Email Address</label><input type="email" id="forgotEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter')submitForgotPassword()"></div>
+      <button class="btn btn-primary" id="forgotSubmitBtn" onclick="submitForgotPassword()" style="width:100%;justify-content:center;margin-top:8px">Send Reset Link</button>
+      <div class="error-msg" id="forgotError"></div>
+      <div id="forgotSuccess" style="display:none;color:var(--success);font-size:.85rem;margin-top:12px;padding:10px;background:rgba(34,197,94,.1);border-radius:var(--radius-sm)"></div>
+      <div class="switch-mode" style="margin-top:16px"><a href="#" onclick="event.preventDefault();hideForgotPassword()" style="font-size:.88rem;color:var(--text-dim);text-decoration:none">&larr; Back to Sign In</a></div>
+    </div>
   </div>
 </div>
 
@@ -958,14 +968,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   // Initialize DB (runs once, idempotent)
   try { await fetch('/api/db-init'); dbInitialized = true; } catch (e) { console.warn('DB init:', e); }
-  // Check auth
+  // Check auth — silently restore session or clear stale token
   if (authToken) {
     try {
       const data = await api('/api/auth?action=me');
-      currentUser = data.user;
-      updateUserUI();
-    } catch { authToken = null; localStorage.removeItem('aw_token'); }
+      if (data && data.user) {
+        currentUser = data.user;
+        updateUserUI();
+      } else {
+        throw new Error('No user');
+      }
+    } catch {
+      // Token is stale or invalid — silently clear and continue as guest
+      authToken = null;
+      currentUser = null;
+      localStorage.removeItem('aw_token');
+      localStorage.removeItem('aw_admin_token');
+    }
   }
+  // Always update UI (shows guest state if no user)
+  updateUserUI();
   // Load data
   try { storeSettings = await api('/api/settings'); } catch {}
   loadStoreDescription();
@@ -1734,7 +1756,7 @@ function showAuth(mode) {
   } else {
     fields += '<div class="field"><label>Username</label><input type="text" id="authLoginUsername" placeholder="Your username" autocomplete="username"></div>';
     fields += '<div class="field"><label>Password</label><input type="password" id="authPassword" placeholder="Your password" autocomplete="current-password"></div>';
-    fields += '<div style="margin-top:-4px;margin-bottom:8px"><small style="color:var(--text-muted);font-size:.75rem">You can also sign in with your <a href="#" onclick="event.preventDefault();toggleLoginEmail()" style="color:var(--blue);text-decoration:none" id="loginEmailToggle">email address</a></small></div>';
+    fields += '<div style="display:flex;justify-content:space-between;margin-top:-4px;margin-bottom:8px"><small style="color:var(--text-muted);font-size:.75rem">Sign in with <a href="#" onclick="event.preventDefault();toggleLoginEmail()" style="color:var(--blue);text-decoration:none" id="loginEmailToggle">email</a> instead</small><small><a href="#" onclick="event.preventDefault();showForgotPassword()" style="color:var(--text-muted);font-size:.75rem;text-decoration:none">Forgot password?</a></small></div>';
     fields += '<div class="field" id="loginEmailField" style="display:none"><label>Email</label><input type="email" id="authLoginEmail" placeholder="your@email.com" autocomplete="email"></div>';
   }
   document.getElementById('authFields').innerHTML = fields;
@@ -1752,6 +1774,7 @@ function showAuth(mode) {
 function closeAuth() {
   document.getElementById('authModal').classList.remove('show');
   document.body.style.overflow = '';
+  hideForgotPassword();
 }
 
 function validateUsername(input) {
@@ -1820,17 +1843,26 @@ async function submitAuth() {
       if (!email) { errEl.textContent = 'Email is required'; errEl.style.display = 'block'; return; }
       if (!password || password.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
       if (password !== confirmPw) { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
-      data = await api('/api/auth?action=register', { method: 'POST', body: JSON.stringify({ email, password, name, username }) });
+      const regRes = await fetch('/api/auth?action=register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name, username })
+      });
+      data = await regRes.json();
+      if (!regRes.ok) throw new Error(data.error || 'Registration failed');
     } else {
       const username = document.getElementById('authLoginUsername')?.value.trim();
       const email = document.getElementById('authLoginEmail')?.value.trim();
       if (!username && !email) { errEl.textContent = 'Please enter your username'; errEl.style.display = 'block'; return; }
       if (!password) { errEl.textContent = 'Please enter your password'; errEl.style.display = 'block'; return; }
-      data = await api('/api/auth?action=login', { method: 'POST', body: JSON.stringify({
-        username: username || undefined,
-        email: email || undefined,
-        password
-      }) });
+      // Use fetch directly to avoid sending stale auth headers
+      const loginRes = await fetch('/api/auth?action=login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username || undefined, email: email || undefined, password })
+      });
+      data = await loginRes.json();
+      if (!loginRes.ok) throw new Error(data.error || 'Login failed');
     }
     authToken = data.token;
     localStorage.setItem('aw_token', data.token);
@@ -1848,6 +1880,45 @@ async function submitAuth() {
     errEl.textContent = err.message;
     errEl.style.display = 'block';
   }
+}
+
+function showForgotPassword() {
+  document.getElementById('authTitle').parentElement.querySelector('h3').style.display = 'none';
+  document.getElementById('authSubtitle').style.display = 'none';
+  document.querySelector('#authModal form').style.display = 'none';
+  document.getElementById('authError').style.display = 'none';
+  document.querySelector('#authModal .switch-mode').style.display = 'none';
+  document.getElementById('authForgotView').style.display = 'block';
+  document.getElementById('forgotError').style.display = 'none';
+  document.getElementById('forgotSuccess').style.display = 'none';
+  document.getElementById('forgotSubmitBtn').disabled = false;
+  document.getElementById('forgotSubmitBtn').textContent = 'Send Reset Link';
+  setTimeout(() => document.getElementById('forgotEmail').focus(), 100);
+}
+
+function hideForgotPassword() {
+  document.getElementById('authForgotView').style.display = 'none';
+  document.getElementById('authTitle').parentElement.querySelector('h3').style.display = '';
+  document.getElementById('authSubtitle').style.display = '';
+  document.querySelector('#authModal form').style.display = '';
+  document.querySelector('#authModal .switch-mode').style.display = '';
+}
+
+async function submitForgotPassword() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  const errEl = document.getElementById('forgotError');
+  const successEl = document.getElementById('forgotSuccess');
+  const btn = document.getElementById('forgotSubmitBtn');
+  errEl.style.display = 'none'; successEl.style.display = 'none';
+  if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email address'; errEl.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const res = await fetch('/api/auth?action=forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to send reset email');
+    successEl.textContent = 'If an account with that email exists, a reset link has been sent. Check your inbox.';
+    successEl.style.display = 'block'; btn.textContent = 'Email Sent';
+  } catch (err) { errEl.textContent = err.message; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Send Reset Link'; }
 }
 
 function logout() {
