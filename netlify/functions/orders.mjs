@@ -6,7 +6,7 @@ const headers = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS'
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
 };
 
 function getSessionId(req) {
@@ -95,12 +95,50 @@ export default async (req, context) => {
       return new Response(JSON.stringify({ success: true, order }), { status: 201, headers });
     }
 
-    // PUT - update order status (admin)
+    // PUT - update order (admin)
     if (req.method === 'PUT') {
       if (!orderId) return new Response(JSON.stringify({ error: 'Order ID required' }), { status: 400, headers });
-      const { status } = await req.json();
-      const [order] = await sql`UPDATE orders SET status = ${status} WHERE id = ${orderId} RETURNING *`;
+      const body = await req.json();
+      const { status, customer_name, customer_email, shipping_address, payment_method, delivery_type, delivery_borough, total } = body;
+
+      const fields = [];
+      const values = {};
+      if (status !== undefined) { fields.push('status'); values.status = status; }
+      if (customer_name !== undefined) { fields.push('customer_name'); values.customer_name = customer_name; }
+      if (customer_email !== undefined) { fields.push('customer_email'); values.customer_email = customer_email; }
+      if (shipping_address !== undefined) { fields.push('shipping_address'); values.shipping_address = shipping_address; }
+      if (payment_method !== undefined) { fields.push('payment_method'); values.payment_method = payment_method; }
+      if (delivery_type !== undefined) { fields.push('delivery_type'); values.delivery_type = delivery_type; }
+      if (delivery_borough !== undefined) { fields.push('delivery_borough'); values.delivery_borough = delivery_borough; }
+      if (total !== undefined) { fields.push('total'); values.total = total; }
+
+      if (fields.length === 0) return new Response(JSON.stringify({ error: 'No fields to update' }), { status: 400, headers });
+
+      // Build dynamic update — neon tagged template requires individual field handling
+      let order;
+      if (fields.length === 1 && fields[0] === 'status') {
+        [order] = await sql`UPDATE orders SET status = ${values.status} WHERE id = ${orderId} RETURNING *`;
+      } else {
+        [order] = await sql`UPDATE orders SET
+          status = COALESCE(${values.status ?? null}, status),
+          customer_name = COALESCE(${values.customer_name ?? null}, customer_name),
+          customer_email = COALESCE(${values.customer_email ?? null}, customer_email),
+          shipping_address = COALESCE(${values.shipping_address ?? null}, shipping_address),
+          payment_method = COALESCE(${values.payment_method ?? null}, payment_method),
+          delivery_type = COALESCE(${values.delivery_type ?? null}, delivery_type),
+          delivery_borough = COALESCE(${values.delivery_borough ?? null}, delivery_borough),
+          total = COALESCE(${values.total !== undefined ? values.total : null}, total)
+          WHERE id = ${orderId} RETURNING *`;
+      }
       return new Response(JSON.stringify({ success: true, order }), { status: 200, headers });
+    }
+
+    // DELETE - delete order (admin)
+    if (req.method === 'DELETE') {
+      if (!orderId) return new Response(JSON.stringify({ error: 'Order ID required' }), { status: 400, headers });
+      await sql`DELETE FROM order_items WHERE order_id = ${orderId}`;
+      await sql`DELETE FROM orders WHERE id = ${orderId}`;
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers });
     }
 
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });

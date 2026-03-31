@@ -279,6 +279,36 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
 
+    <!-- ORDER EDIT MODAL -->
+    <div class="modal-overlay" id="orderModal" style="display:none">
+      <div class="modal">
+        <div class="modal-header"><h3 id="orderFormTitle">Edit Order</h3><button onclick="closeOrderModal()" style="background:none;color:var(--text-dim);font-size:1.2rem">&times;</button></div>
+        <input type="hidden" id="orderEditId">
+        <div class="field"><label>Customer Name</label><input id="orderName"></div>
+        <div class="field"><label>Customer Email</label><input id="orderEmail" type="email"></div>
+        <div class="field"><label>Shipping Address</label><textarea id="orderAddress" rows="2"></textarea></div>
+        <div class="field"><label>Total ($)</label><input id="orderTotal" type="number" step="0.01" min="0"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field"><label>Payment Method</label>
+            <select id="orderPayment"><option value="cash">Cash</option><option value="btc">BTC</option><option value="xmr">XMR</option></select>
+          </div>
+          <div class="field"><label>Status</label>
+            <select id="orderStatus"><option value="pending">Pending</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field"><label>Delivery Type</label>
+            <select id="orderDelivery"><option value="delivery">Delivery</option><option value="shipping">Shipping</option></select>
+          </div>
+          <div class="field"><label>Borough</label><input id="orderBorough" placeholder="e.g. Brooklyn"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-primary" onclick="saveOrder()">Save Changes</button>
+          <button class="btn btn-secondary" onclick="closeOrderModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <!-- CUSTOMERS -->
     <div class="view" id="customersView">
       <div class="section-header">
@@ -908,13 +938,15 @@ async function loadOrders() {
           <td style="font-size:.75rem;color:var(--text-dim)">${devLabel}</td>
           <td><span class="status-badge status-${o.status}">${o.status}</span></td>
           <td style="color:var(--text-dim);font-size:.82rem">${new Date(o.created_at).toLocaleDateString()}</td>
-          <td>
+          <td style="white-space:nowrap">
             <select onchange="updateOrderStatus(${o.id}, this.value)" style="padding:6px 10px;font-size:.8rem;width:auto">
               <option ${o.status==='pending'?'selected':''}>pending</option>
               <option ${o.status==='shipped'?'selected':''}>shipped</option>
               <option ${o.status==='delivered'?'selected':''}>delivered</option>
               <option ${o.status==='cancelled'?'selected':''}>cancelled</option>
             </select>
+            <button class="btn btn-secondary btn-sm" onclick="editOrder(${o.id})" style="margin-left:4px">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})" style="margin-left:4px">Delete</button>
           </td>
         </tr>`;
         }).join('');
@@ -925,6 +957,54 @@ async function updateOrderStatus(id, status) {
   try {
     await api('/api/orders?id=' + id, { method: 'PUT', body: JSON.stringify({ status }) });
     toast('Order updated');
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+function editOrder(id) {
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('orderEditId').value = o.id;
+  document.getElementById('orderName').value = o.customer_name || '';
+  document.getElementById('orderEmail').value = o.customer_email || '';
+  document.getElementById('orderAddress').value = o.shipping_address || '';
+  document.getElementById('orderTotal').value = parseFloat(o.total || 0).toFixed(2);
+  document.getElementById('orderPayment').value = o.payment_method || 'cash';
+  document.getElementById('orderStatus').value = o.status || 'pending';
+  document.getElementById('orderDelivery').value = o.delivery_type || 'delivery';
+  document.getElementById('orderBorough').value = o.delivery_borough || '';
+  document.getElementById('orderModal').style.display = 'flex';
+}
+
+function closeOrderModal() {
+  document.getElementById('orderModal').style.display = 'none';
+}
+
+async function saveOrder() {
+  const id = document.getElementById('orderEditId').value;
+  const data = {
+    customer_name: document.getElementById('orderName').value,
+    customer_email: document.getElementById('orderEmail').value,
+    shipping_address: document.getElementById('orderAddress').value,
+    total: document.getElementById('orderTotal').value,
+    payment_method: document.getElementById('orderPayment').value,
+    status: document.getElementById('orderStatus').value,
+    delivery_type: document.getElementById('orderDelivery').value,
+    delivery_borough: document.getElementById('orderBorough').value
+  };
+  try {
+    await api('/api/orders?id=' + id, { method: 'PUT', body: JSON.stringify(data) });
+    closeOrderModal();
+    loadOrders();
+    toast('Order saved');
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+async function deleteOrder(id) {
+  if (!confirm('Delete order #' + id + '? This cannot be undone.')) return;
+  try {
+    await api('/api/orders?id=' + id, { method: 'DELETE' });
+    loadOrders();
+    toast('Order deleted');
   } catch (err) { toast('Error: ' + err.message, true); }
 }
 
