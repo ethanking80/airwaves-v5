@@ -14,6 +14,24 @@ export default async (req, context) => {
     return new Response('', { status: 204, headers });
   }
 
+  // Health check - no auth required
+  const url = new URL(req.url);
+  if (req.method === 'GET' && url.searchParams.get('action') === 'health') {
+    let dbOk = false;
+    try {
+      await sql`SELECT 1 as ok`;
+      dbOk = true;
+    } catch (e) {
+      // DB unavailable
+    }
+    return new Response(JSON.stringify({
+      status: dbOk ? 'operational' : 'degraded',
+      version: '4.6',
+      db: dbOk,
+      timestamp: new Date().toISOString()
+    }), { status: 200, headers });
+  }
+
   try {
     // GET - fetch all settings as key-value object
     if (req.method === 'GET') {

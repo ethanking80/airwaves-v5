@@ -213,7 +213,7 @@ footer p{color:var(--text-muted);font-size:.8rem}
 <footer>
   <div class="brand">((( AIRWAVES )))</div>
   <p>Premium hemp products, lab-tested for quality and compliance.</p>
-  <p style="margin-top:4px">All products contain less than 0.3% THC. &copy; 2026 AIRWAVES v4.3.1</p>
+  <p style="margin-top:4px">All products contain less than 0.3% THC. &copy; 2026 AIRWAVES ver4.6</p>
 </footer>
 
 <script>
@@ -608,6 +608,30 @@ function toast(msg, isError = false) {
 }
 
 init();
+</script>
+<style>
+.site-status-bar{background:var(--surface);border-top:1px solid var(--surface2);padding:8px 24px;display:flex;align-items:center;justify-content:space-between;font-size:.7rem;color:var(--text-muted);letter-spacing:.3px}
+.site-status-bar .version{font-weight:600}
+.site-status-bar .status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;background:var(--text-muted)}
+.site-status-bar .status-dot.ok{background:var(--green)}
+.site-status-bar .status-dot.warn{background:var(--warning)}
+.site-status-bar .status-dot.err{background:var(--danger)}
+</style>
+<div class="site-status-bar">
+  <span class="version">AIRWAVES ver4.6</span>
+  <span><span class="status-dot"></span><span class="status-text">Checking...</span></span>
+</div>
+<script>
+(function(){
+  const bar = document.querySelector('.site-status-bar');
+  if (!bar) return;
+  const dot = bar.querySelector('.status-dot');
+  const txt = bar.querySelector('.status-text');
+  fetch('/api/settings?action=health').then(r=>r.json()).then(d=>{
+    if (d.status === 'operational') { dot.className='status-dot ok'; txt.textContent='All systems operational'; }
+    else { dot.className='status-dot warn'; txt.textContent='Systems degraded'; }
+  }).catch(()=>{ dot.className='status-dot err'; txt.textContent='Status unavailable'; });
+})();
 </script>
 </body>
 </html>
