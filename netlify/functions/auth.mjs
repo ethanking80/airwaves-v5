@@ -107,6 +107,7 @@ export default async (req, context) => {
       if (!user || !verifyPassword(password, user.password_hash)) {
         return new Response(JSON.stringify({ error: 'Invalid credentials' }), { status: 401, headers });
       }
+      await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
       const token = generateToken(user);
       return new Response(JSON.stringify({ success: true, token, user: {
         id: user.id, user_id: user.user_id, email: user.email, name: user.name, role: user.role, username: user.username,

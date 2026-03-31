@@ -37,7 +37,53 @@ export default async (req, context) => {
     if (req.method === 'GET') {
       const admin = verifyAdmin(req);
       if (!admin) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-      const customers = await sql`SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC`;
+
+      const action = url.searchParams.get('action');
+
+      if (action === 'dashboard-stats') {
+        const [recentCustomers, recentReviews, recentLogins, paymentStats, totalCustomers, totalOrders, totalRevenue, activeProducts] = await Promise.all([
+          // 5 most recently registered customers
+          sql`SELECT id, name, email, username, role, created_at, last_login FROM users WHERE role = 'customer' ORDER BY created_at DESC LIMIT 5`,
+          // 5 most recent reviews with product name
+          sql`SELECT r.id, r.reviewer_name, r.rating, r.title, r.body, r.created_at, p.name as product_name FROM reviews r LEFT JOIN products p ON r.product_id = p.id ORDER BY r.created_at DESC LIMIT 5`,
+          // 10 most recent logins (all roles)
+          sql`SELECT id, name, email, username, role, last_login FROM users WHERE last_login IS NOT NULL ORDER BY last_login DESC LIMIT 10`,
+          // Payment method breakdown (non-cancelled orders)
+          sql`SELECT
+            COALESCE(SUM(CASE WHEN payment_method = 'btc' THEN total ELSE 0 END), 0) as btc_revenue,
+            COALESCE(SUM(CASE WHEN payment_method = 'btc' THEN 1 ELSE 0 END), 0) as btc_count,
+            COALESCE(SUM(CASE WHEN payment_method = 'xmr' THEN total ELSE 0 END), 0) as xmr_revenue,
+            COALESCE(SUM(CASE WHEN payment_method = 'xmr' THEN 1 ELSE 0 END), 0) as xmr_count,
+            COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN total ELSE 0 END), 0) as cash_revenue,
+            COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN 1 ELSE 0 END), 0) as cash_count,
+            COALESCE(SUM(total), 0) as total_revenue,
+            COUNT(*) as total_orders
+          FROM orders WHERE status != 'cancelled'`,
+          // Total customer count
+          sql`SELECT COUNT(*) as count FROM users WHERE role = 'customer'`,
+          // Total order count
+          sql`SELECT COUNT(*) as count FROM orders`,
+          // Total revenue
+          sql`SELECT COALESCE(SUM(total), 0) as total FROM orders WHERE status != 'cancelled'`,
+          // Active product count
+          sql`SELECT COUNT(*) as count FROM products WHERE active = true`
+        ]);
+
+        return new Response(JSON.stringify({
+          recent_customers: recentCustomers,
+          recent_reviews: recentReviews,
+          recent_logins: recentLogins,
+          payment_stats: paymentStats[0],
+          summary: {
+            total_customers: parseInt(totalCustomers[0].count),
+            total_orders: parseInt(totalOrders[0].count),
+            total_revenue: parseFloat(totalRevenue[0].total),
+            active_products: parseInt(activeProducts[0].count)
+          }
+        }), { status: 200, headers });
+      }
+
+      const customers = await sql`SELECT id, name, email, role, username, user_id, created_at, last_login FROM users ORDER BY created_at DESC`;
       return new Response(JSON.stringify(customers), { status: 200, headers });
     }
 

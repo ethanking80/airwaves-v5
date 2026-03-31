@@ -188,6 +188,7 @@ export default async (req, context) => {
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(100)`;
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS state VARCHAR(50)`;
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS zip_code VARCHAR(20)`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP`;
 
     // Ensure default admin has correct username and password (v4.3.1 migration)
     const [adminUser] = await sql`SELECT id FROM users WHERE email = 'admin@airwaves.com' AND role = 'admin'`;

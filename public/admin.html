@@ -246,13 +246,57 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <!-- DASHBOARD -->
     <div class="view active" id="dashboardView">
       <div class="section-header"><h2>Dashboard</h2><span style="color:var(--text-muted);font-size:.85rem" id="welcomeMsg"></span></div>
+
+      <!-- Summary stat cards -->
       <div class="stat-grid" id="statsGrid">
         <div class="stat-card"><div class="label">Products</div><div class="value green" id="statProducts">-</div></div>
         <div class="stat-card"><div class="label">Orders</div><div class="value purple" id="statOrders">-</div></div>
         <div class="stat-card"><div class="label">Revenue</div><div class="value blue" id="statRevenue">-</div></div>
         <div class="stat-card"><div class="label">Customers</div><div class="value warning" id="statCustomers">-</div></div>
       </div>
-      <div class="table-wrap">
+
+      <!-- Payment method stats -->
+      <div class="stat-grid" id="paymentStatsGrid" style="margin-top:1.5rem">
+        <div class="stat-card" style="border-top:3px solid #f7931a">
+          <div class="label" style="color:#f7931a">BTC (Bitcoin)</div>
+          <div class="value" style="color:#f7931a" id="statBtcRevenue">-</div>
+          <div style="color:var(--text-dim);font-size:.8rem;margin-top:.25rem" id="statBtcCount">0 orders</div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid #ff6600">
+          <div class="label" style="color:#ff6600">XMR (Monero)</div>
+          <div class="value" style="color:#ff6600" id="statXmrRevenue">-</div>
+          <div style="color:var(--text-dim);font-size:.8rem;margin-top:.25rem" id="statXmrCount">0 orders</div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid var(--green)">
+          <div class="label" style="color:var(--green)">Cash</div>
+          <div class="value green" id="statCashRevenue">-</div>
+          <div style="color:var(--text-dim);font-size:.8rem;margin-top:.25rem" id="statCashCount">0 orders</div>
+        </div>
+      </div>
+
+      <!-- Recent Logins -->
+      <div class="table-wrap" style="margin-top:1.5rem">
+        <div class="table-header"><h3>Recent Logins</h3></div>
+        <table><thead><tr><th>User</th><th>Role</th><th>Last Login</th></tr></thead>
+        <tbody id="recentLogins"><tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:30px">Loading...</td></tr></tbody></table>
+      </div>
+
+      <!-- Recent Customers -->
+      <div class="table-wrap" style="margin-top:1.5rem">
+        <div class="table-header"><h3>Recent Customers</h3></div>
+        <table><thead><tr><th>Name</th><th>Email</th><th>Username</th><th>Joined</th><th>Last Login</th></tr></thead>
+        <tbody id="recentCustomers"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">Loading...</td></tr></tbody></table>
+      </div>
+
+      <!-- Recent Reviews -->
+      <div class="table-wrap" style="margin-top:1.5rem">
+        <div class="table-header"><h3>Recent Reviews</h3></div>
+        <table><thead><tr><th>Product</th><th>Reviewer</th><th>Rating</th><th>Title</th><th>Date</th></tr></thead>
+        <tbody id="recentReviews"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">Loading...</td></tr></tbody></table>
+      </div>
+
+      <!-- Recent Orders -->
+      <div class="table-wrap" style="margin-top:1.5rem">
         <div class="table-header"><h3>Recent Orders</h3></div>
         <table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
         <tbody id="recentOrders"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">Loading...</td></tr></tbody></table>
@@ -712,26 +756,100 @@ function showSection(name) {
   if (name === 'settings') loadSettings();
 }
 
+// Time ago helper
+function timeAgo(dateStr) {
+  if (!dateStr) return 'Never';
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = now - then;
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + ' min ago';
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + (hours === 1 ? ' hour ago' : ' hours ago');
+  const days = Math.floor(hours / 24);
+  if (days < 30) return days + (days === 1 ? ' day ago' : ' days ago');
+  const months = Math.floor(days / 30);
+  if (months < 12) return months + (months === 1 ? ' month ago' : ' months ago');
+  const years = Math.floor(months / 12);
+  return years + (years === 1 ? ' year ago' : ' years ago');
+}
+
+function renderStars(rating) {
+  const r = Math.round(Number(rating) || 0);
+  let s = '';
+  for (let i = 1; i <= 5; i++) s += i <= r ? '\u2605' : '\u2606';
+  return s;
+}
+
+function roleBadge(role) {
+  if (role === 'admin' || role === 'manager') return `<span class="status-badge" style="background:var(--green);color:#fff">${esc(role)}</span>`;
+  if (role === 'site_admin') return `<span class="status-badge" style="background:var(--blue);color:#fff">${esc(role)}</span>`;
+  if (role === 'staff') return `<span class="status-badge" style="background:var(--purple);color:#fff">${esc(role)}</span>`;
+  return `<span style="color:var(--text-dim)">${esc(role || 'customer')}</span>`;
+}
+
 // Dashboard
 async function loadDashboard() {
   try {
-    const [products, orders] = await Promise.all([
-      api('/api/products'),
+    const [data, orders] = await Promise.all([
+      api('/api/customers?action=dashboard-stats'),
       api('/api/orders?all=true')
     ]);
-    allProducts = products;
     allOrders = orders;
-    
-    document.getElementById('statProducts').textContent = products.length;
-    document.getElementById('statOrders').textContent = orders.length;
-    const revenue = orders.reduce((s, o) => s + parseFloat(o.total || 0), 0);
-    document.getElementById('statRevenue').textContent = '$' + revenue.toFixed(2);
-    
-    // Count unique emails
-    const emails = new Set(orders.map(o => o.customer_email).filter(Boolean));
-    document.getElementById('statCustomers').textContent = emails.size;
-    
-    // Recent orders
+
+    // Summary stat cards
+    const summary = data.summary || {};
+    document.getElementById('statProducts').textContent = summary.active_products ?? '-';
+    document.getElementById('statOrders').textContent = summary.total_orders ?? '-';
+    document.getElementById('statRevenue').textContent = '$' + parseFloat(summary.total_revenue || 0).toFixed(2);
+    document.getElementById('statCustomers').textContent = summary.total_customers ?? '-';
+
+    // Payment method stats
+    const ps = data.payment_stats || {};
+    document.getElementById('statBtcRevenue').textContent = '$' + parseFloat(ps.btc_revenue || 0).toFixed(2);
+    document.getElementById('statBtcCount').textContent = (ps.btc_count || 0) + ' orders';
+    document.getElementById('statXmrRevenue').textContent = '$' + parseFloat(ps.xmr_revenue || 0).toFixed(2);
+    document.getElementById('statXmrCount').textContent = (ps.xmr_count || 0) + ' orders';
+    document.getElementById('statCashRevenue').textContent = '$' + parseFloat(ps.cash_revenue || 0).toFixed(2);
+    document.getElementById('statCashCount').textContent = (ps.cash_count || 0) + ' orders';
+
+    // Recent Logins
+    const logins = data.recent_logins || [];
+    document.getElementById('recentLogins').innerHTML = logins.length === 0
+      ? '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:30px">No login data</td></tr>'
+      : logins.map(u => `<tr>
+          <td>${esc(u.name || u.username || 'N/A')}</td>
+          <td>${roleBadge(u.role)}</td>
+          <td style="color:var(--text-dim)">${timeAgo(u.last_login)}</td>
+        </tr>`).join('');
+
+    // Recent Customers
+    const customers = data.recent_customers || [];
+    document.getElementById('recentCustomers').innerHTML = customers.length === 0
+      ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">No customers yet</td></tr>'
+      : customers.map(c => `<tr>
+          <td>${esc(c.name || 'N/A')}</td>
+          <td style="color:var(--text-dim)">${esc(c.email || '')}</td>
+          <td>${esc(c.username || '')}</td>
+          <td style="color:var(--text-dim)">${timeAgo(c.created_at)}</td>
+          <td style="color:var(--text-dim)">${c.last_login ? timeAgo(c.last_login) : 'Never'}</td>
+        </tr>`).join('');
+
+    // Recent Reviews
+    const reviews = data.recent_reviews || [];
+    document.getElementById('recentReviews').innerHTML = reviews.length === 0
+      ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">No reviews yet</td></tr>'
+      : reviews.map(r => `<tr>
+          <td>${esc(r.product_name || 'Unknown')}</td>
+          <td>${esc(r.reviewer_name || 'Anonymous')}</td>
+          <td style="color:var(--warning);font-size:1.1rem;letter-spacing:1px">${renderStars(r.rating)}</td>
+          <td>${esc(r.title || '')}</td>
+          <td style="color:var(--text-dim)">${timeAgo(r.created_at)}</td>
+        </tr>`).join('');
+
+    // Recent Orders
     const recent = orders.slice(0, 5);
     document.getElementById('recentOrders').innerHTML = recent.length === 0
       ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">No orders yet</td></tr>'
@@ -742,7 +860,7 @@ async function loadDashboard() {
           <td><span class="status-badge status-${o.status}">${o.status}</span></td>
           <td style="color:var(--text-dim)">${new Date(o.created_at).toLocaleDateString()}</td>
         </tr>`).join('');
-  } catch (err) { console.error(err); }
+  } catch (err) { console.error('Dashboard load error:', err); }
 }
 
 // Products
