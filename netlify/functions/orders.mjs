@@ -53,8 +53,28 @@ export default async (req, context) => {
       return new Response(JSON.stringify(orders), { status: 200, headers });
     }
 
-    // POST - create order from cart
+    // POST - create order
     if (req.method === 'POST') {
+      const action = url.searchParams.get('action');
+
+      // Admin: create order directly (no cart)
+      if (action === 'admin-create') {
+        const { customer_name, customer_email, shipping_address, total, payment_method, status, delivery_type, delivery_borough } = await req.json();
+        if (!payment_method) {
+          return new Response(JSON.stringify({ error: 'Payment method is required' }), { status: 400, headers });
+        }
+        if (!total || parseFloat(total) <= 0) {
+          return new Response(JSON.stringify({ error: 'Total must be greater than 0' }), { status: 400, headers });
+        }
+        const [order] = await sql`
+          INSERT INTO orders (session_id, total, customer_name, customer_email, shipping_address, status, payment_method, delivery_type, delivery_borough, payment_status)
+          VALUES (${'admin_manual'}, ${parseFloat(total).toFixed(2)}, ${customer_name || ''}, ${customer_email || ''}, ${shipping_address || ''}, ${status || 'pending'}, ${payment_method}, ${delivery_type || 'delivery'}, ${delivery_borough || ''}, 'pending')
+          RETURNING *
+        `;
+        return new Response(JSON.stringify({ success: true, order }), { status: 201, headers });
+      }
+
+      // Customer: create order from cart
       const sessionId = getSessionId(req);
       const { customer_name, customer_email, shipping_address, payment_method, delivery_type, delivery_borough, device_info } = await req.json();
 

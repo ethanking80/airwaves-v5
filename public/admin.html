@@ -272,7 +272,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
     <!-- ORDERS -->
     <div class="view" id="ordersView">
-      <div class="section-header"><h2>Orders</h2></div>
+      <div class="section-header"><h2>Orders</h2><button class="btn btn-primary" onclick="newOrder()">+ New Order</button></div>
       <div class="table-wrap">
         <table><thead><tr><th>ID</th><th>Customer</th><th>Total</th><th>Payment</th><th>Delivery</th><th>Device</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
         <tbody id="ordersTable"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px">Loading...</td></tr></tbody></table>
@@ -303,7 +303,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div class="field"><label>Borough</label><input id="orderBorough" placeholder="e.g. Brooklyn"></div>
         </div>
         <div style="display:flex;gap:10px;margin-top:16px">
-          <button class="btn btn-primary" onclick="saveOrder()">Save Changes</button>
+          <button class="btn btn-primary" onclick="saveOrder()" id="orderSaveBtn">Save Changes</button>
           <button class="btn btn-secondary" onclick="closeOrderModal()">Cancel</button>
         </div>
       </div>
@@ -960,6 +960,21 @@ async function updateOrderStatus(id, status) {
   } catch (err) { toast('Error: ' + err.message, true); }
 }
 
+function newOrder() {
+  document.getElementById('orderEditId').value = '';
+  document.getElementById('orderName').value = '';
+  document.getElementById('orderEmail').value = '';
+  document.getElementById('orderAddress').value = '';
+  document.getElementById('orderTotal').value = '';
+  document.getElementById('orderPayment').value = 'cash';
+  document.getElementById('orderStatus').value = 'pending';
+  document.getElementById('orderDelivery').value = 'delivery';
+  document.getElementById('orderBorough').value = '';
+  document.getElementById('orderFormTitle').textContent = 'New Order';
+  document.getElementById('orderSaveBtn').textContent = 'Create Order';
+  document.getElementById('orderModal').style.display = 'flex';
+}
+
 function editOrder(id) {
   const o = allOrders.find(x => x.id === id);
   if (!o) return;
@@ -972,6 +987,8 @@ function editOrder(id) {
   document.getElementById('orderStatus').value = o.status || 'pending';
   document.getElementById('orderDelivery').value = o.delivery_type || 'delivery';
   document.getElementById('orderBorough').value = o.delivery_borough || '';
+  document.getElementById('orderFormTitle').textContent = 'Edit Order #' + o.id;
+  document.getElementById('orderSaveBtn').textContent = 'Save Changes';
   document.getElementById('orderModal').style.display = 'flex';
 }
 
@@ -992,10 +1009,17 @@ async function saveOrder() {
     delivery_borough: document.getElementById('orderBorough').value
   };
   try {
-    await api('/api/orders?id=' + id, { method: 'PUT', body: JSON.stringify(data) });
+    if (id) {
+      await api('/api/orders?id=' + id, { method: 'PUT', body: JSON.stringify(data) });
+      toast('Order saved');
+    } else {
+      if (!data.payment_method) { toast('Payment method is required', true); return; }
+      if (!data.total || parseFloat(data.total) <= 0) { toast('Total must be greater than 0', true); return; }
+      await api('/api/orders?action=admin-create', { method: 'POST', body: JSON.stringify(data) });
+      toast('Order created');
+    }
     closeOrderModal();
     loadOrders();
-    toast('Order saved');
   } catch (err) { toast('Error: ' + err.message, true); }
 }
 
