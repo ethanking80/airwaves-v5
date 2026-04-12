@@ -43,8 +43,7 @@ export default async (req, context) => {
       }
       // Attach variant summary to each product
       if (products.length > 0) {
-        const ids = products.map(p => p.id);
-        const variants = await sql`SELECT product_id, MIN(price) as min_price, MAX(price) as max_price, COUNT(*) as variant_count FROM product_variants WHERE product_id = ANY(${ids}) GROUP BY product_id`;
+        const variants = await sql`SELECT product_id, MIN(price) as min_price, MAX(price) as max_price, COUNT(*) as variant_count FROM product_variants GROUP BY product_id`;
         const varMap = {};
         variants.forEach(v => { varMap[v.product_id] = v; });
         products.forEach(p => {
