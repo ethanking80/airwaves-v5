@@ -90,6 +90,29 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .modal{background:var(--surface);border:1px solid var(--surface3);border-radius:var(--radius);max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:28px}
 .modal h3{font-family:'Archivo Black',sans-serif;margin-bottom:20px;font-size:1.2rem}
 
+/* Clickable rows */
+tr.clickable-row{cursor:pointer;transition:background .15s}
+tr.clickable-row:hover td{background:rgba(57,255,20,.05)}
+
+/* Detail modal */
+.detail-modal-overlay{position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
+.detail-modal-overlay.show{display:flex}
+.detail-modal{background:var(--surface);border:1px solid var(--surface3);border-radius:var(--radius);max-width:560px;width:100%;max-height:90vh;overflow-y:auto;padding:28px}
+.detail-modal .detail-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.detail-modal .detail-header h3{font-family:'Archivo Black',sans-serif;font-size:1.15rem;margin:0}
+.detail-modal .detail-close{background:none;border:none;color:var(--text-dim);font-size:1.4rem;cursor:pointer;padding:4px 8px;border-radius:6px;transition:background .15s}
+.detail-modal .detail-close:hover{background:var(--surface2);color:var(--text)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.detail-grid .detail-field{padding:12px 0;border-bottom:1px solid var(--surface2)}
+.detail-grid .detail-field.full{grid-column:1/-1}
+.detail-field .detail-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:2px;font-weight:600}
+.detail-field .detail-value{font-size:.92rem;color:var(--text);word-break:break-word}
+.detail-actions{display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--surface2);justify-content:flex-end}
+.detail-field input,.detail-field select,.detail-field textarea{margin-top:4px}
+.admin-product-card{cursor:pointer}
+.clickable-panel{transition:border-color .2s}
+.clickable-panel:hover{border-color:var(--green)}
+
 /* Section header */
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
 .section-header h2{font-family:'Archivo Black',sans-serif;font-size:1.3rem}
@@ -470,57 +493,26 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <!-- SETTINGS -->
     <div class="view" id="settingsView">
       <div class="section-header"><h2>Store Settings</h2></div>
-      <div class="panel">
+      <div class="panel clickable-panel" onclick="openSettingsPanel('general')" style="cursor:pointer">
         <h3>General</h3>
-        <div class="form-grid">
-          <div class="field"><label>Store Name</label><input type="text" id="setStoreName"></div>
-          <div class="field"><label>Tagline</label><input type="text" id="setTagline"></div>
-          <div class="field"><label>Contact Email</label><input type="email" id="setEmail"></div>
-          <div class="field"><label>Phone</label><input type="text" id="setPhone"></div>
-          <div class="field full"><label>Store Description</label><textarea id="setStoreDesc" rows="3" placeholder="Describe your store..."></textarea></div>
-        </div>
+        <div id="settingsGeneralSummary" style="color:var(--text-dim);font-size:.88rem">Loading...</div>
       </div>
-      <div class="panel">
+      <div class="panel clickable-panel" onclick="openSettingsPanel('shipping')" style="cursor:pointer">
         <h3>Shipping & Tax</h3>
-        <div class="form-grid">
-          <div class="field"><label>Flat Rate Shipping ($)</label><input type="number" step="0.01" id="setShipping"></div>
-          <div class="field"><label>Free Shipping Threshold ($)</label><input type="number" step="0.01" id="setFreeShip"></div>
-          <div class="field"><label>Tax Rate (%)</label><input type="number" step="0.01" id="setTax"></div>
-          <div class="field"><label>Age Verification</label>
-            <select id="setAgeVerify"><option value="true">Enabled</option><option value="false">Disabled</option></select>
-          </div>
-        </div>
+        <div id="settingsShippingSummary" style="color:var(--text-dim);font-size:.88rem">Loading...</div>
       </div>
-      <div class="panel">
+      <div class="panel clickable-panel" onclick="openSettingsPanel('crypto')" style="cursor:pointer">
         <h3>Crypto Wallets</h3>
-        <div class="form-grid">
-          <div class="field full"><label>Bitcoin (BTC) Wallet Address</label><input type="text" id="setWalletBtc" placeholder="bc1q... or 1A1z..."></div>
-          <div class="field full"><label>Monero (XMR) Wallet Address</label><input type="text" id="setWalletXmr" placeholder="4..."></div>
-          <div class="field"><label>Crypto Payments</label>
-            <select id="setCryptoEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select>
-          </div>
-          <div class="field"><label>Cash Payments</label>
-            <select id="setCashEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select>
-          </div>
-        </div>
+        <div id="settingsCryptoSummary" style="color:var(--text-dim);font-size:.88rem">Loading...</div>
       </div>
-      <div class="panel">
+      <div class="panel clickable-panel" onclick="openSettingsPanel('cash')" style="cursor:pointer">
         <h3>Cash Management</h3>
-        <div class="form-grid">
-          <div class="field"><label>Opening Cash Balance ($)</label><input type="number" step="0.01" id="setOpeningCash" placeholder="0.00"></div>
-          <div class="field"><label>Cash Float Amount ($)</label><input type="number" step="0.01" id="setCashFloat" placeholder="200.00"></div>
-        </div>
+        <div id="settingsCashSummary" style="color:var(--text-dim);font-size:.88rem">Loading...</div>
       </div>
-      <div class="panel">
+      <div class="panel clickable-panel" onclick="openSettingsPanel('delivery')" style="cursor:pointer">
         <h3>NYC Delivery</h3>
-        <div class="form-grid">
-          <div class="field"><label>Local Delivery</label>
-            <select id="setDeliveryEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select>
-          </div>
-          <div class="field full"><label>Delivery Boroughs (comma-separated)</label><input type="text" id="setDeliveryBoroughs" placeholder="Manhattan,Brooklyn,Queens,Bronx,Staten Island"></div>
-        </div>
+        <div id="settingsDeliverySummary" style="color:var(--text-dim);font-size:.88rem">Loading...</div>
       </div>
-      <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
     </div>
   </div>
 </div>
@@ -584,6 +576,20 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div style="display:flex;gap:10px;margin-top:16px">
       <button class="btn btn-primary" onclick="saveUser()">Save User</button>
       <button class="btn btn-secondary" onclick="closeUserForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal (view/edit popup for all admin items) -->
+<div class="detail-modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-modal">
+    <div class="detail-header">
+      <h3 id="detailTitle">Details</h3>
+      <button class="detail-close" onclick="closeDetail()">&times;</button>
+    </div>
+    <div class="detail-grid" id="detailBody"></div>
+    <div class="detail-actions" id="detailActions">
+      <button class="btn btn-secondary" onclick="closeDetail()">Close</button>
     </div>
   </div>
 </div>
@@ -817,9 +823,10 @@ async function loadDashboard() {
 
     // Recent Logins
     const logins = data.recent_logins || [];
+    dashboardData.logins = logins;
     document.getElementById('recentLogins').innerHTML = logins.length === 0
       ? '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:30px">No login data</td></tr>'
-      : logins.map(u => `<tr>
+      : logins.map((u, i) => `<tr class="clickable-row" onclick="showLoginDetail(${i})">
           <td>${esc(u.name || u.username || 'N/A')}</td>
           <td>${roleBadge(u.role)}</td>
           <td style="color:var(--text-dim)">${timeAgo(u.last_login)}</td>
@@ -827,9 +834,10 @@ async function loadDashboard() {
 
     // Recent Customers
     const customers = data.recent_customers || [];
+    dashboardData.customers = customers;
     document.getElementById('recentCustomers').innerHTML = customers.length === 0
       ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">No customers yet</td></tr>'
-      : customers.map(c => `<tr>
+      : customers.map((c, i) => `<tr class="clickable-row" onclick="showCustomerDetail(${i})">
           <td>${esc(c.name || 'N/A')}</td>
           <td style="color:var(--text-dim)">${esc(c.email || '')}</td>
           <td>${esc(c.username || '')}</td>
@@ -839,9 +847,10 @@ async function loadDashboard() {
 
     // Recent Reviews
     const reviews = data.recent_reviews || [];
+    dashboardData.reviews = reviews;
     document.getElementById('recentReviews').innerHTML = reviews.length === 0
       ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">No reviews yet</td></tr>'
-      : reviews.map(r => `<tr>
+      : reviews.map((r, i) => `<tr class="clickable-row" onclick="showReviewDetail(${i})">
           <td>${esc(r.product_name || 'Unknown')}</td>
           <td>${esc(r.reviewer_name || 'Anonymous')}</td>
           <td style="color:var(--warning);font-size:1.1rem;letter-spacing:1px">${renderStars(r.rating)}</td>
@@ -851,9 +860,10 @@ async function loadDashboard() {
 
     // Recent Orders
     const recent = orders.slice(0, 5);
+    dashboardData.orders = recent;
     document.getElementById('recentOrders').innerHTML = recent.length === 0
       ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">No orders yet</td></tr>'
-      : recent.map(o => `<tr>
+      : recent.map((o, i) => `<tr class="clickable-row" onclick="showDashOrderDetail(${i})">
           <td>#${o.id}</td>
           <td>${esc(o.customer_name || 'N/A')}</td>
           <td style="color:var(--green);font-weight:600">$${parseFloat(o.total).toFixed(2)}</td>
@@ -890,7 +900,7 @@ function renderProductCards() {
   }
   grid.innerHTML = allProducts.map(p => {
     const r = productRatings[p.id] || { average: 0, count: 0 };
-    return `<div class="admin-product-card">
+    return `<div class="admin-product-card" onclick="showProductDetail(${p.id})">
       <div class="card-img">
         ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}">` : '<div class="no-img">🌿</div>'}
         <div class="card-badges">
@@ -920,8 +930,8 @@ function renderProductCards() {
       <div class="card-footer">
         <div class="price">$${parseFloat(p.price).toFixed(2)}</div>
         ${adminRole === 'admin' ? `<div class="actions">
-          <button class="btn btn-secondary btn-sm" onclick="editProduct(${p.id})">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Del</button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editProduct(${p.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteProduct(${p.id})">Del</button>
         </div>` : ''}
       </div>
     </div>`;
@@ -1047,7 +1057,7 @@ async function loadOrders() {
           const payLabel = o.payment_method === 'btc' ? '₿ BTC' : o.payment_method === 'xmr' ? 'ɱ XMR' : o.payment_method === 'cash' ? '💵 Cash' : o.payment_method || '—';
           const delLabel = o.delivery_type === 'delivery' ? '🚗 ' + (o.delivery_borough || 'NYC') : '📦 Ship';
           const devLabel = o.device_info ? esc(o.device_info) : '<span style="color:var(--text-muted)">—</span>';
-          return `<tr>
+          return `<tr class="clickable-row" onclick="showFullOrderDetail(${o.id})">
           <td>#${o.id}</td>
           <td>${esc(o.customer_name || 'N/A')}<br><span style="font-size:.75rem;color:var(--text-muted)">${esc(o.customer_email || '')}</span></td>
           <td style="color:var(--green);font-weight:600">$${parseFloat(o.total).toFixed(2)}</td>
@@ -1056,7 +1066,7 @@ async function loadOrders() {
           <td style="font-size:.75rem;color:var(--text-dim)">${devLabel}</td>
           <td><span class="status-badge status-${o.status}">${o.status}</span></td>
           <td style="color:var(--text-dim);font-size:.82rem">${new Date(o.created_at).toLocaleDateString()}</td>
-          <td style="white-space:nowrap">
+          <td style="white-space:nowrap" onclick="event.stopPropagation()">
             <select onchange="updateOrderStatus(${o.id}, this.value)" style="padding:6px 10px;font-size:.8rem;width:auto">
               <option ${o.status==='pending'?'selected':''}>pending</option>
               <option ${o.status==='shipped'?'selected':''}>shipped</option>
@@ -1167,12 +1177,12 @@ function renderCustomers() {
         const roleBadge = c.role === 'admin' ? 'status-shipped' : c.role === 'site_admin' ? 'status-delivered' : 'status-pending';
         const canEdit = adminRole === 'admin' || (adminRole === 'site_admin' && c.role === 'customer');
         const canDelete = adminRole === 'admin';
-        return `<tr>
+        return `<tr class="clickable-row" onclick="showUserDetail(${c.id})">
         <td><strong>${esc(c.name)}</strong></td>
         <td style="color:var(--text-dim)">${esc(c.email)}</td>
         <td><span class="status-badge ${roleBadge}">${c.role}</span></td>
         <td style="color:var(--text-dim)">${new Date(c.created_at).toLocaleDateString()}</td>
-        <td>
+        <td onclick="event.stopPropagation()">
           ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="editUser(${c.id})">Edit</button>` : ''}
           ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${c.id},'${esc(c.name)}')">Delete</button>` : ''}
         </td>
@@ -1207,8 +1217,13 @@ function closeUserForm() {
   document.getElementById('userModal').classList.remove('show');
 }
 
-function editUser(id) {
-  const u = allCustomers.find(x => x.id === id);
+async function editUser(id) {
+  let u = allCustomers.find(x => x.id === id);
+  if (!u) {
+    // Might be called from dashboard before customers are loaded
+    try { allCustomers = await api('/api/customers'); } catch {}
+    u = allCustomers.find(x => x.id === id);
+  }
   if (u) openUserForm(u);
 }
 
@@ -1301,7 +1316,7 @@ async function loadFinance(period = 'all') {
     // Top products
     document.getElementById('finTopProducts').innerHTML = summary.top_products.length === 0
       ? '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px">No sales data</td></tr>'
-      : summary.top_products.map(p => `<tr>
+      : summary.top_products.map(p => `<tr class="clickable-row" onclick="showFinProductDetail('${esc(p.product_name).replace(/'/g,"\\'")}',${p.total_qty},${p.total_rev})">
           <td>${esc(p.product_name)}</td>
           <td>${p.total_qty}</td>
           <td style="color:var(--green);font-weight:600">$${parseFloat(p.total_rev).toFixed(2)}</td>
@@ -1317,9 +1332,10 @@ async function loadTransactions() {
   const days = document.getElementById('txFilterDays').value;
   try {
     const data = await api(`/api/finance?action=transactions&type=${type}&days=${days}`);
+    dashboardData.transactions = data.transactions;
     document.getElementById('finTxTable').innerHTML = data.transactions.length === 0
       ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px">No transactions</td></tr>'
-      : data.transactions.map(t => `<tr>
+      : data.transactions.map((t, i) => `<tr class="clickable-row" onclick="showTransactionDetail(${i})">
           <td style="color:var(--text-dim);font-size:.82rem">${new Date(t.created_at).toLocaleString()}</td>
           <td><span class="tx-type-${t.type === 'cash_in' ? 'in' : 'out'}">${t.type === 'cash_in' ? 'IN' : 'OUT'}</span></td>
           <td class="tx-type-${t.type === 'cash_in' ? 'in' : 'out'}">${t.type === 'cash_in' ? '+' : '-'}$${parseFloat(t.amount).toFixed(2)}</td>
@@ -1343,52 +1359,279 @@ async function logCashTx(type) {
 }
 
 // Settings
+let currentSettings = {};
+
 async function loadSettings() {
   try {
-    const s = await api('/api/settings');
-    document.getElementById('setStoreName').value = s.store_name || '';
-    document.getElementById('setTagline').value = s.store_tagline || '';
-    document.getElementById('setEmail').value = s.store_email || '';
-    document.getElementById('setPhone').value = s.store_phone || '';
-    document.getElementById('setStoreDesc').value = s.store_description || '';
-    document.getElementById('setShipping').value = s.shipping_flat_rate || '5.99';
-    document.getElementById('setFreeShip').value = s.free_shipping_threshold || '75';
-    document.getElementById('setTax').value = s.tax_rate || '0';
-    document.getElementById('setAgeVerify').value = s.age_verification || 'true';
-    document.getElementById('setWalletBtc').value = s.wallet_btc || '';
-    document.getElementById('setWalletXmr').value = s.wallet_xmr || '';
-    document.getElementById('setCryptoEnabled').value = s.payment_crypto_enabled || 'true';
-    document.getElementById('setCashEnabled').value = s.payment_cash_enabled || 'true';
-    document.getElementById('setDeliveryEnabled').value = s.delivery_enabled || 'true';
-    document.getElementById('setDeliveryBoroughs').value = s.delivery_boroughs || 'Manhattan,Brooklyn,Queens,Bronx,Staten Island';
-    document.getElementById('setOpeningCash').value = s.opening_cash_balance || '0';
-    document.getElementById('setCashFloat').value = s.cash_float_amount || '200';
+    currentSettings = await api('/api/settings');
+    renderSettingsSummaries();
   } catch (err) { console.error(err); }
 }
 
-async function saveSettings() {
-  try {
-    await api('/api/settings', { method: 'PUT', body: JSON.stringify({
-      store_name: document.getElementById('setStoreName').value,
-      store_tagline: document.getElementById('setTagline').value,
-      store_email: document.getElementById('setEmail').value,
-      store_phone: document.getElementById('setPhone').value,
-      store_description: document.getElementById('setStoreDesc').value,
-      shipping_flat_rate: document.getElementById('setShipping').value,
-      free_shipping_threshold: document.getElementById('setFreeShip').value,
-      tax_rate: document.getElementById('setTax').value,
-      age_verification: document.getElementById('setAgeVerify').value,
-      wallet_btc: document.getElementById('setWalletBtc').value,
-      wallet_xmr: document.getElementById('setWalletXmr').value,
-      payment_crypto_enabled: document.getElementById('setCryptoEnabled').value,
-      payment_cash_enabled: document.getElementById('setCashEnabled').value,
-      delivery_enabled: document.getElementById('setDeliveryEnabled').value,
-      delivery_boroughs: document.getElementById('setDeliveryBoroughs').value,
-      opening_cash_balance: document.getElementById('setOpeningCash').value,
-      cash_float_amount: document.getElementById('setCashFloat').value
-    })});
-    toast('Settings saved!');
-  } catch (err) { toast('Error: ' + err.message, true); }
+function renderSettingsSummaries() {
+  const s = currentSettings;
+  document.getElementById('settingsGeneralSummary').innerHTML =
+    `<strong>${esc(s.store_name || 'Not set')}</strong> &mdash; ${esc(s.store_tagline || 'No tagline')}<br>${esc(s.store_email || 'No email')} &bull; ${esc(s.store_phone || 'No phone')}`;
+  document.getElementById('settingsShippingSummary').innerHTML =
+    `Shipping: $${s.shipping_flat_rate || '5.99'} &bull; Free over $${s.free_shipping_threshold || '75'} &bull; Tax: ${s.tax_rate || '0'}% &bull; Age verify: ${s.age_verification === 'false' ? 'Off' : 'On'}`;
+  document.getElementById('settingsCryptoSummary').innerHTML =
+    `Crypto: ${s.payment_crypto_enabled === 'false' ? 'Disabled' : 'Enabled'} &bull; Cash: ${s.payment_cash_enabled === 'false' ? 'Disabled' : 'Enabled'}<br>BTC: ${s.wallet_btc ? esc(s.wallet_btc.slice(0,12)) + '...' : 'Not set'} &bull; XMR: ${s.wallet_xmr ? esc(s.wallet_xmr.slice(0,12)) + '...' : 'Not set'}`;
+  document.getElementById('settingsCashSummary').innerHTML =
+    `Opening balance: $${s.opening_cash_balance || '0'} &bull; Float: $${s.cash_float_amount || '200'}`;
+  document.getElementById('settingsDeliverySummary').innerHTML =
+    `${s.delivery_enabled === 'false' ? 'Disabled' : 'Enabled'} &bull; Boroughs: ${esc(s.delivery_boroughs || 'Manhattan,Brooklyn,Queens,Bronx,Staten Island')}`;
+}
+
+const settingsPanelDefs = {
+  general: {
+    title: 'General Settings',
+    fields: [
+      { key: 'store_name', label: 'Store Name', type: 'text' },
+      { key: 'store_tagline', label: 'Tagline', type: 'text' },
+      { key: 'store_email', label: 'Contact Email', type: 'email' },
+      { key: 'store_phone', label: 'Phone', type: 'text' },
+      { key: 'store_description', label: 'Store Description', type: 'textarea', full: true },
+    ]
+  },
+  shipping: {
+    title: 'Shipping & Tax',
+    fields: [
+      { key: 'shipping_flat_rate', label: 'Flat Rate Shipping ($)', type: 'number' },
+      { key: 'free_shipping_threshold', label: 'Free Shipping Threshold ($)', type: 'number' },
+      { key: 'tax_rate', label: 'Tax Rate (%)', type: 'number' },
+      { key: 'age_verification', label: 'Age Verification', type: 'select', options: [['true','Enabled'],['false','Disabled']] },
+    ]
+  },
+  crypto: {
+    title: 'Crypto Wallets',
+    fields: [
+      { key: 'wallet_btc', label: 'Bitcoin (BTC) Wallet Address', type: 'text', full: true },
+      { key: 'wallet_xmr', label: 'Monero (XMR) Wallet Address', type: 'text', full: true },
+      { key: 'payment_crypto_enabled', label: 'Crypto Payments', type: 'select', options: [['true','Enabled'],['false','Disabled']] },
+      { key: 'payment_cash_enabled', label: 'Cash Payments', type: 'select', options: [['true','Enabled'],['false','Disabled']] },
+    ]
+  },
+  cash: {
+    title: 'Cash Management',
+    fields: [
+      { key: 'opening_cash_balance', label: 'Opening Cash Balance ($)', type: 'number' },
+      { key: 'cash_float_amount', label: 'Cash Float Amount ($)', type: 'number' },
+    ]
+  },
+  delivery: {
+    title: 'NYC Delivery',
+    fields: [
+      { key: 'delivery_enabled', label: 'Local Delivery', type: 'select', options: [['true','Enabled'],['false','Disabled']] },
+      { key: 'delivery_boroughs', label: 'Delivery Boroughs (comma-separated)', type: 'text', full: true },
+    ]
+  }
+};
+
+function openSettingsPanel(panel) {
+  const def = settingsPanelDefs[panel];
+  if (!def) return;
+  const s = currentSettings;
+  const fieldsHtml = def.fields.map(f => {
+    let input;
+    if (f.type === 'textarea') {
+      input = `<textarea id="sp_${f.key}" rows="3" style="margin-top:4px">${esc(s[f.key] || '')}</textarea>`;
+    } else if (f.type === 'select') {
+      input = `<select id="sp_${f.key}" style="margin-top:4px">${f.options.map(o => `<option value="${o[0]}" ${String(s[f.key] || o[0]) === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>`;
+    } else {
+      input = `<input type="${f.type}" id="sp_${f.key}" value="${esc(String(s[f.key] || ''))}" style="margin-top:4px" ${f.type === 'number' ? 'step="0.01"' : ''}>`;
+    }
+    return `<div class="detail-field${f.full ? ' full' : ''}"><div class="detail-label">${esc(f.label)}</div><div class="detail-value">${input}</div></div>`;
+  }).join('');
+
+  document.getElementById('detailTitle').textContent = def.title;
+  document.getElementById('detailBody').innerHTML = fieldsHtml;
+  detailSaveHandler = async () => {
+    const body = {};
+    // Merge all current settings then override with this panel's fields
+    Object.assign(body, currentSettings);
+    def.fields.forEach(f => { body[f.key] = document.getElementById('sp_' + f.key).value; });
+    try {
+      await api('/api/settings', { method: 'PUT', body: JSON.stringify(body) });
+      toast('Settings saved!');
+      Object.assign(currentSettings, body);
+      renderSettingsSummaries();
+      closeDetail();
+    } catch (err) { toast('Error: ' + err.message, true); }
+  };
+  document.getElementById('detailActions').innerHTML = `<button class="btn btn-primary" onclick="detailSave()">Save</button><button class="btn btn-secondary" onclick="closeDetail()">Close</button>`;
+  document.getElementById('detailModal').classList.add('show');
+  document.getElementById('detailModal').style.display = 'flex';
+}
+
+// Detail modal system — view & edit for all admin items
+let dashboardData = {};
+let detailSaveHandler = null;
+
+function openDetail(title, fields, opts = {}) {
+  document.getElementById('detailTitle').textContent = title;
+  document.getElementById('detailBody').innerHTML = fields.map(f =>
+    `<div class="detail-field${f.full ? ' full' : ''}">
+      <div class="detail-label">${esc(f.label)}</div>
+      <div class="detail-value">${f.html || esc(f.value || '—')}</div>
+    </div>`
+  ).join('');
+  // Build action buttons
+  const actionsEl = document.getElementById('detailActions');
+  if (opts.onSave) {
+    detailSaveHandler = opts.onSave;
+    actionsEl.innerHTML = `<button class="btn btn-primary" onclick="detailSave()">Save</button><button class="btn btn-secondary" onclick="closeDetail()">Close</button>`;
+  } else if (opts.onEdit) {
+    actionsEl.innerHTML = `<button class="btn btn-primary" onclick="(${opts.onEdit.toString()})()">Edit</button><button class="btn btn-secondary" onclick="closeDetail()">Close</button>`;
+  } else {
+    detailSaveHandler = null;
+    actionsEl.innerHTML = `<button class="btn btn-secondary" onclick="closeDetail()">Close</button>`;
+  }
+  document.getElementById('detailModal').classList.add('show');
+  document.getElementById('detailModal').style.display = 'flex';
+}
+
+function closeDetail() {
+  document.getElementById('detailModal').classList.remove('show');
+  document.getElementById('detailModal').style.display = 'none';
+  detailSaveHandler = null;
+}
+
+async function detailSave() {
+  if (detailSaveHandler) await detailSaveHandler();
+}
+
+// --- Dashboard: Logins ---
+function showLoginDetail(idx) {
+  const u = dashboardData.logins[idx];
+  if (!u) return;
+  openDetail('Login Details', [
+    { label: 'Name', value: u.name || 'N/A' },
+    { label: 'Username', value: u.username || '—' },
+    { label: 'Email', value: u.email || '—', full: true },
+    { label: 'Role', html: roleBadge(u.role) },
+    { label: 'User ID', value: String(u.id || '—') },
+    { label: 'Last Login', value: u.last_login ? new Date(u.last_login).toLocaleString() : 'Never' },
+  ], { onEdit: () => { closeDetail(); editUser(u.id); } });
+}
+
+// --- Dashboard: Customers ---
+function showCustomerDetail(idx) {
+  const c = dashboardData.customers[idx];
+  if (!c) return;
+  openDetail('Customer Details', [
+    { label: 'Name', value: c.name || 'N/A' },
+    { label: 'Username', value: c.username || '—' },
+    { label: 'Email', value: c.email || '—', full: true },
+    { label: 'Role', html: roleBadge(c.role) },
+    { label: 'User ID', value: String(c.id || '—') },
+    { label: 'Joined', value: c.created_at ? new Date(c.created_at).toLocaleString() : '—' },
+    { label: 'Last Login', value: c.last_login ? new Date(c.last_login).toLocaleString() : 'Never' },
+  ], { onEdit: () => { closeDetail(); editUser(c.id); } });
+}
+
+// --- Dashboard: Reviews ---
+function showReviewDetail(idx) {
+  const r = dashboardData.reviews[idx];
+  if (!r) return;
+  openDetail('Review Details', [
+    { label: 'Product', value: r.product_name || 'Unknown' },
+    { label: 'Reviewer', value: r.reviewer_name || 'Anonymous' },
+    { label: 'Rating', html: `<span style="color:var(--warning);font-size:1.2rem;letter-spacing:2px">${renderStars(r.rating)}</span> <span style="color:var(--text-dim)">(${r.rating}/5)</span>` },
+    { label: 'Date', value: r.created_at ? new Date(r.created_at).toLocaleString() : '—' },
+    { label: 'Title', value: r.title || '—', full: true },
+    { label: 'Review', value: r.body || 'No review text', full: true },
+  ]);
+}
+
+// --- Dashboard: Orders ---
+function showDashOrderDetail(idx) {
+  const o = dashboardData.orders[idx];
+  if (!o) return;
+  showOrderDetail(o);
+}
+
+// --- Shared order detail (used from dashboard + orders section) ---
+function showOrderDetail(o) {
+  const payLabel = o.payment_method === 'btc' ? 'BTC' : o.payment_method === 'xmr' ? 'XMR' : o.payment_method === 'cash' ? 'Cash' : o.payment_method || '—';
+  const delLabel = o.delivery_type === 'delivery' ? 'Delivery' + (o.delivery_borough ? ' (' + o.delivery_borough + ')' : '') : o.delivery_type === 'shipping' ? 'Shipping' : '—';
+  openDetail('Order #' + o.id, [
+    { label: 'Customer', value: o.customer_name || 'N/A' },
+    { label: 'Email', value: o.customer_email || '—' },
+    { label: 'Total', html: `<span style="color:var(--green);font-weight:700">$${parseFloat(o.total).toFixed(2)}</span>` },
+    { label: 'Status', html: `<span class="status-badge status-${o.status}">${o.status}</span>` },
+    { label: 'Payment', value: payLabel },
+    { label: 'Delivery', value: delLabel },
+    { label: 'Shipping Address', value: o.shipping_address || '—', full: true },
+    { label: 'Device', value: o.device_info || '—' },
+    { label: 'Date', value: o.created_at ? new Date(o.created_at).toLocaleString() : '—' },
+  ], { onEdit: () => { closeDetail(); editOrder(o.id); } });
+}
+
+// --- Products section: clickable card detail ---
+function showProductDetail(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+  const r = productRatings[p.id] || { average: 0, count: 0 };
+  openDetail(p.name, [
+    { label: 'Product ID', value: String(p.id) },
+    { label: 'Price', html: `<span style="color:var(--green);font-weight:700">$${parseFloat(p.price).toFixed(2)}</span>` },
+    { label: 'Category', value: p.category || '—' },
+    { label: 'Strain Type', value: p.strain_type || 'N/A' },
+    { label: 'THC Content', value: p.thc_content || '—' },
+    { label: 'CBD Content', value: p.cbd_content || '—' },
+    { label: 'Weight/Size', value: p.weight || '—' },
+    { label: 'Stock', value: String(p.stock ?? 0) },
+    { label: 'Description', value: p.description || '—', full: true },
+    { label: 'Rating', html: `<span style="color:var(--warning);font-size:1.1rem;letter-spacing:2px">${renderStars(r.average)}</span> <span style="color:var(--text-dim)">${r.average.toFixed(1)}/5 (${r.count} review${r.count !== 1 ? 's' : ''})</span>` },
+    { label: 'Featured', value: p.featured ? 'Yes' : 'No' },
+    { label: 'Active', value: p.active === false ? 'No — Hidden' : 'Yes — Visible' },
+    { label: 'Image', html: p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" style="max-width:100%;max-height:150px;border-radius:8px;margin-top:4px">` : '—', full: true },
+  ], { onEdit: () => { closeDetail(); editProduct(id); } });
+}
+
+// --- Orders section: clickable row ---
+function showFullOrderDetail(id) {
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+  showOrderDetail(o);
+}
+
+// --- Customers section: clickable row ---
+function showUserDetail(id) {
+  const c = allCustomers.find(x => x.id === id);
+  if (!c) return;
+  openDetail(c.name || 'User #' + c.id, [
+    { label: 'User ID', value: String(c.id) },
+    { label: 'Name', value: c.name || '—' },
+    { label: 'Email', value: c.email || '—', full: true },
+    { label: 'Username', value: c.username || '—' },
+    { label: 'User ID (public)', value: c.user_id || '—' },
+    { label: 'Role', html: roleBadge(c.role) },
+    { label: 'Joined', value: c.created_at ? new Date(c.created_at).toLocaleString() : '—' },
+    { label: 'Last Login', value: c.last_login ? new Date(c.last_login).toLocaleString() : 'Never' },
+  ], { onEdit: () => { closeDetail(); editUser(id); } });
+}
+
+// --- Finance: Top Products clickable ---
+function showFinProductDetail(name, qty, rev) {
+  openDetail('Product Sales Detail', [
+    { label: 'Product', value: name },
+    { label: 'Total Quantity Sold', value: String(qty) },
+    { label: 'Total Revenue', html: `<span style="color:var(--green);font-weight:700">$${parseFloat(rev).toFixed(2)}</span>` },
+  ]);
+}
+
+// --- Finance: Transaction clickable ---
+function showTransactionDetail(idx) {
+  const t = (dashboardData.transactions || [])[idx];
+  if (!t) return;
+  openDetail('Transaction Details', [
+    { label: 'Type', html: `<span class="tx-type-${t.type === 'cash_in' ? 'in' : 'out'}">${t.type === 'cash_in' ? 'Cash In' : 'Cash Out'}</span>` },
+    { label: 'Amount', html: `<span class="tx-type-${t.type === 'cash_in' ? 'in' : 'out'}">${t.type === 'cash_in' ? '+' : '-'}$${parseFloat(t.amount).toFixed(2)}</span>` },
+    { label: 'Description', value: t.description || '—', full: true },
+    { label: 'Created By', value: t.created_by_name || 'System' },
+    { label: 'Date', value: t.created_at ? new Date(t.created_at).toLocaleString() : '—' },
+  ]);
 }
 
 // Utils
@@ -1412,7 +1655,7 @@ function toast(msg, isError = false) {
 @media(max-width:768px){.site-status-bar{margin-left:60px}}
 </style>
 <div class="site-status-bar">
-  <span class="version">AIRWAVES ver4.6</span>
+  <span class="version">AIRWAVES ver4.7</span>
   <span><span class="status-dot"></span><span class="status-text">Checking...</span></span>
 </div>
 <script>

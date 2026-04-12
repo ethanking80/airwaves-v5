@@ -7,6 +7,8 @@
 <link rel="icon" type="image/jpeg" href="/images/logo.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+<!-- TODO: Replace with your Google OAuth Client ID -->
+<script src="https://accounts.google.com/gsi/client" async></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -408,6 +410,33 @@ footer{background:var(--surface);border-top:1px solid var(--surface2);padding:0}
 .admin-stat-val{font-family:'Archivo Black',sans-serif;font-size:1.1rem;color:var(--green);line-height:1.2}
 .admin-stat-label{font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}
 @media(max-width:768px){.admin-bar-stats{gap:10px}.admin-stat-val{font-size:.9rem}}
+
+/* Login Banner */
+.login-banner{max-width:1200px;margin:0 auto;padding:0 24px 20px}
+.login-banner-inner{background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);border:1px solid var(--surface3);border-radius:16px;padding:36px 32px;position:relative;overflow:hidden}
+.login-banner-inner::before{content:'';position:absolute;top:-40%;right:-10%;width:300px;height:300px;background:radial-gradient(circle,rgba(57,255,20,.07) 0%,transparent 70%);pointer-events:none}
+.login-banner-inner::after{content:'';position:absolute;bottom:-40%;left:-5%;width:250px;height:250px;background:radial-gradient(circle,rgba(139,92,246,.06) 0%,transparent 70%);pointer-events:none}
+.login-banner-close{position:absolute;top:14px;right:14px;background:var(--surface3);color:var(--text-dim);border:none;width:30px;height:30px;border-radius:50%;font-size:1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;z-index:2}
+.login-banner-close:hover{background:var(--danger);color:#fff}
+.login-banner-content{display:flex;align-items:center;gap:40px;position:relative;z-index:1}
+.login-banner-text{flex:1}
+.login-banner-text h3{font-family:'Archivo Black',sans-serif;font-size:1.4rem;margin-bottom:10px;background:linear-gradient(135deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-banner-benefits{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:20px}
+.login-banner-benefits li{list-style:none;font-size:.85rem;color:var(--text-dim);display:flex;align-items:center;gap:8px}
+.login-banner-benefits li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.login-banner-actions{display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-width:240px}
+.google-signin-btn{display:flex;align-items:center;gap:12px;background:#fff;color:#1f1f1f;border:none;border-radius:8px;padding:11px 20px;font-size:.9rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:box-shadow .2s,transform .15s;width:100%;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.google-signin-btn:hover{box-shadow:0 2px 8px rgba(0,0,0,.3);transform:translateY(-1px)}
+.google-signin-btn svg{flex-shrink:0}
+.login-banner-links{display:flex;gap:16px;width:100%;justify-content:center}
+.login-banner-links a{font-size:.84rem;color:var(--text-dim);transition:color .2s}
+.login-banner-links a:hover{color:var(--green)}
+@media(max-width:768px){
+  .login-banner-content{flex-direction:column;gap:20px;text-align:center}
+  .login-banner-benefits{grid-template-columns:1fr;justify-items:center}
+  .login-banner-actions{align-items:center;width:100%;min-width:unset}
+  .login-banner-text h3{font-size:1.2rem}
+}
 </style>
 </head>
 <body>
@@ -524,6 +553,34 @@ footer{background:var(--surface);border-top:1px solid var(--surface2);padding:0}
     <div class="hero">
       <h2>Premium <span class="gr">Hemp Products</span><br>Delivered to You</h2>
       <p>Lab-tested, farm-fresh hemp flower, edibles, tinctures, and more. Explore nature's finest.</p>
+    </div>
+
+    <!-- Login Banner (guest users only) -->
+    <div class="login-banner" id="loginBanner" style="display:none">
+      <div class="login-banner-inner">
+        <button class="login-banner-close" onclick="dismissLoginBanner()" title="Dismiss">&times;</button>
+        <div class="login-banner-content">
+          <div class="login-banner-text">
+            <h3>Log in for the best experience</h3>
+            <ul class="login-banner-benefits">
+              <li>Personalized recommendations</li>
+              <li>Order tracking &amp; history</li>
+              <li>Faster checkout</li>
+              <li>Exclusive deals &amp; rewards</li>
+            </ul>
+          </div>
+          <div class="login-banner-actions">
+            <button class="google-signin-btn" onclick="signInWithGoogle()" type="button">
+              <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.998 23.998 0 0 0 0 24c0 3.77.9 7.35 2.56 10.52l7.97-5.93z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.93C6.51 42.62 14.62 48 24 48z"/></svg>
+              Sign in with Google
+            </button>
+            <div class="login-banner-links">
+              <a href="#" onclick="event.preventDefault();showAuth('login')">Sign in with email</a>
+              <a href="#" onclick="event.preventDefault();showAuth('register')">Create account</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Store Description (editable by admin) -->
@@ -822,7 +879,7 @@ footer{background:var(--surface);border-top:1px solid var(--surface2);padding:0}
     <div class="footer-bottom">
       <div class="footer-bottom-inner">
         <div class="footer-top-row">
-          <p>&copy; 2026 AIRWAVES. All rights reserved. <span style="color:var(--text-muted);font-size:.65rem;letter-spacing:.5px">ver4.6</span></p>
+          <p>&copy; 2026 AIRWAVES. All rights reserved. <span style="color:var(--text-muted);font-size:.65rem;letter-spacing:.5px">ver4.7</span></p>
           <div class="device-badge" id="deviceBadge" title="Your device info"></div>
         </div>
         <p class="legal">All products are derived from hemp and contain less than 0.3% Delta-9 THC by dry weight, in compliance with the 2018 Farm Bill. These statements have not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease. Must be 21+ to purchase. Please consume responsibly.</p>
@@ -2017,6 +2074,75 @@ function updateUserUI() {
     adminBar.style.display = 'none';
     adminDropdown.style.display = 'none';
   }
+  // Toggle login banner for guests
+  updateLoginBanner();
+}
+
+function updateLoginBanner() {
+  const banner = document.getElementById('loginBanner');
+  if (!banner) return;
+  if (currentUser || sessionStorage.getItem('aw_login_banner_dismissed')) {
+    banner.style.display = 'none';
+  } else {
+    banner.style.display = '';
+  }
+}
+
+function dismissLoginBanner() {
+  sessionStorage.setItem('aw_login_banner_dismissed', '1');
+  const banner = document.getElementById('loginBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+/* TODO: Replace with your Google OAuth Client ID */
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+
+function signInWithGoogle() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    toast('Google Sign-In is loading, please try again in a moment.');
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential,
+    auto_select: false
+  });
+  google.accounts.id.prompt((notification) => {
+    // If One Tap is dismissed or not displayed, fall back to the button-style popup
+    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        ux_mode: 'popup'
+      });
+      google.accounts.id.prompt();
+    }
+  });
+}
+
+async function handleGoogleCredential(response) {
+  try {
+    const res = await fetch('/api/auth?action=google-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: response.credential })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Google sign-in failed');
+    authToken = data.token;
+    localStorage.setItem('aw_token', data.token);
+    if (data.user.role === 'admin' || data.user.role === 'site_admin') {
+      localStorage.setItem('aw_admin_token', data.token);
+    }
+    currentUser = data.user;
+    updateUserUI();
+    closeAuth();
+    toast('Welcome, ' + currentUser.name + '!');
+    await loadCart();
+  } catch (err) {
+    console.error('Google sign-in error:', err);
+    toast('Google sign-in failed: ' + err.message);
+  }
 }
 
 async function loadAdminBar() {
@@ -2211,7 +2337,7 @@ function toast(msg, isError = false) {
 .site-status-bar .status-dot.err{background:var(--danger)}
 </style>
 <div class="site-status-bar">
-  <span class="version">AIRWAVES ver4.6</span>
+  <span class="version">AIRWAVES ver4.7</span>
   <span><span class="status-dot"></span><span class="status-text">Checking...</span></span>
 </div>
 <script>

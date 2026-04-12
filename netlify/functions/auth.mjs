@@ -207,6 +207,53 @@ export default async (req, context) => {
       return new Response(JSON.stringify({ success: true, message: 'Password has been reset. You can now sign in.' }), { status: 200, headers });
     }
 
+    // Google OAuth login
+    if (req.method === 'POST' && action === 'google-login') {
+      const { credential } = await req.json();
+      if (!credential) {
+        return new Response(JSON.stringify({ error: 'Google credential is required' }), { status: 400, headers });
+      }
+      // Verify the Google ID token via Google's tokeninfo endpoint
+      const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+      if (!tokenInfoRes.ok) {
+        return new Response(JSON.stringify({ error: 'Invalid Google credential' }), { status: 401, headers });
+      }
+      const gPayload = await tokenInfoRes.json();
+      const email = (gPayload.email || '').toLowerCase();
+      const name = gPayload.name || gPayload.email.split('@')[0];
+      if (!email) {
+        return new Response(JSON.stringify({ error: 'Could not retrieve email from Google account' }), { status: 400, headers });
+      }
+      // Check if user already exists
+      let [user] = await sql`SELECT * FROM users WHERE email = ${email}`;
+      if (user) {
+        // Existing user — log them in
+        await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
+      } else {
+        // New user — auto-register with Google info
+        const randomPassword = crypto.randomBytes(32).toString('hex');
+        const passwordHash = hashPassword(randomPassword);
+        // Generate a username from the email prefix, with random suffix for uniqueness
+        const emailPrefix = email.split('@')[0].replace(/[^a-z0-9_.-]/gi, '').toLowerCase().slice(0, 16);
+        const suffix = crypto.randomBytes(2).toString('hex');
+        const username = emailPrefix + '_' + suffix;
+        [user] = await sql`
+          INSERT INTO users (email, password_hash, name, role, username)
+          VALUES (${email}, ${passwordHash}, ${name}, 'customer', ${username})
+          RETURNING *
+        `;
+        const userId = generateUserId(user.id);
+        await sql`UPDATE users SET user_id = ${userId} WHERE id = ${user.id}`;
+        user.user_id = userId;
+        user.username = username;
+      }
+      const token = generateToken(user);
+      return new Response(JSON.stringify({ success: true, token, user: {
+        id: user.id, user_id: user.user_id, email: user.email, name: user.name, role: user.role, username: user.username,
+        phone: user.phone, shipping_address: user.shipping_address, city: user.city, state: user.state, zip_code: user.zip_code
+      } }), { status: 200, headers });
+    }
+
     return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400, headers });
   } catch (error) {
     console.error('Auth Error:', error);
