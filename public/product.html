@@ -78,6 +78,44 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,10,18,.92);backdrop-
 .spec-card .value{font-weight:700;font-size:1rem;color:var(--text)}
 .spec-card .value.highlight{color:var(--green)}
 
+/* Terpene Profile */
+.terp-section{margin-bottom:28px}
+.terp-section h3{font-family:'Archivo Black',sans-serif;font-size:.95rem;margin-bottom:14px;color:var(--text)}
+.terp-bars{display:flex;flex-direction:column;gap:10px}
+.terp-row{display:flex;align-items:center;gap:12px}
+.terp-name{width:100px;font-size:.82rem;font-weight:600;color:var(--text-dim);text-align:right;flex-shrink:0}
+.terp-track{flex:1;height:10px;background:var(--surface2);border-radius:5px;overflow:hidden}
+.terp-fill{height:100%;border-radius:5px;transition:width .6s ease}
+.terp-pct{width:40px;font-size:.78rem;font-weight:700;color:var(--text)}
+
+/* Effects */
+.effects-section{margin-bottom:28px}
+.effects-section h3{font-family:'Archivo Black',sans-serif;font-size:.95rem;margin-bottom:14px;color:var(--text)}
+.effects-tags{display:flex;flex-wrap:wrap;gap:8px}
+.effect-tag{padding:8px 18px;border-radius:50px;font-size:.82rem;font-weight:600;border:1px solid var(--surface3);background:var(--surface);color:var(--text);transition:all .2s}
+.effect-tag:hover{border-color:var(--green);color:var(--green)}
+
+/* Flavor Notes */
+.flavor-section{margin-bottom:28px}
+.flavor-section h3{font-family:'Archivo Black',sans-serif;font-size:.95rem;margin-bottom:14px;color:var(--text)}
+.flavor-pills{display:flex;flex-wrap:wrap;gap:8px}
+.flavor-pill{padding:6px 16px;border-radius:50px;font-size:.8rem;font-weight:600;background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(6,182,212,.15));color:var(--blue);border:1px solid rgba(6,182,212,.2)}
+
+/* Lineage */
+.lineage-section{margin-bottom:28px}
+.lineage-section h3{font-family:'Archivo Black',sans-serif;font-size:.95rem;margin-bottom:10px;color:var(--text)}
+.lineage-display{font-size:.95rem;color:var(--text-dim);padding:14px 18px;background:var(--surface);border:1px solid var(--surface2);border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px}
+.lineage-display .cross{color:var(--purple);font-weight:700;font-size:1.1rem}
+
+/* Use Cases */
+.use-section{margin-bottom:28px}
+.use-section h3{font-family:'Archivo Black',sans-serif;font-size:.95rem;margin-bottom:14px;color:var(--text)}
+.use-tags{display:flex;flex-wrap:wrap;gap:8px}
+.use-tag{padding:8px 18px;border-radius:50px;font-size:.82rem;font-weight:600;background:rgba(57,255,20,.08);color:var(--green);border:1px solid rgba(57,255,20,.2)}
+
+/* Brand badge */
+.brand-label{display:inline-block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);padding:4px 12px;border:1px solid rgba(6,182,212,.3);border-radius:50px;margin-bottom:12px}
+
 /* Stock */
 .stock-row{display:flex;align-items:center;gap:8px;margin-bottom:24px;padding:12px 16px;background:var(--surface);border-radius:var(--radius-sm)}
 .stock-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -317,6 +355,14 @@ function renderPage() {
   if (product.weight) specs.push({ label: 'Weight / Size', val: product.weight });
   specs.push({ label: 'Lab Tested', val: 'Yes — COA Available', highlight: true });
 
+  // Parse rich fields
+  const terpenes = parseTerpenes(product.terpenes || '');
+  const effects = parseCSV(product.effects);
+  const flavors = parseCSV(product.flavor_notes);
+  const useCases = parseCSV(product.use_cases);
+  const lineage = product.lineage || '';
+  const brand = product.brand || '';
+
   const s = reviews.summary;
   const maxBar = Math.max(...s.distribution, 1);
 
@@ -345,6 +391,7 @@ function renderPage() {
 
       <!-- DETAILS -->
       <div class="details-section">
+        ${brand ? `<span class="brand-label">${esc(brand)}</span>` : ''}
         <div class="product-category">${esc(product.category || '')}</div>
         <h1 class="product-name">${esc(product.name)}</h1>
 
@@ -370,6 +417,50 @@ function renderPage() {
             `).join('')}
           </div>
         </div>
+
+        ${terpenes.length > 0 ? `
+        <div class="terp-section">
+          <h3>Terpene Profile</h3>
+          <div class="terp-bars">
+            ${terpenes.map(t => `
+              <div class="terp-row">
+                <span class="terp-name">${esc(t.name)}</span>
+                <div class="terp-track"><div class="terp-fill" style="width:${Math.min(t.pct, 100)}%;background:${getTerpColor(t.name)}"></div></div>
+                <span class="terp-pct">${t.raw}%</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
+        ${effects.length > 0 ? `
+        <div class="effects-section">
+          <h3>Effects</h3>
+          <div class="effects-tags">
+            ${effects.map(e => `<span class="effect-tag">${getEffectEmoji(e)} ${esc(e)}</span>`).join('')}
+          </div>
+        </div>` : ''}
+
+        ${flavors.length > 0 ? `
+        <div class="flavor-section">
+          <h3>Flavor Notes</h3>
+          <div class="flavor-pills">
+            ${flavors.map(f => `<span class="flavor-pill">${esc(f)}</span>`).join('')}
+          </div>
+        </div>` : ''}
+
+        ${lineage ? `
+        <div class="lineage-section">
+          <h3>Lineage / Genetics</h3>
+          <div class="lineage-display">${lineage.split(/\s*x\s*/i).map(g => esc(g.trim())).join(' <span class="cross">&times;</span> ')}</div>
+        </div>` : ''}
+
+        ${useCases.length > 0 ? `
+        <div class="use-section">
+          <h3>Best For</h3>
+          <div class="use-tags">
+            ${useCases.map(u => `<span class="use-tag">${esc(u)}</span>`).join('')}
+          </div>
+        </div>` : ''}
 
         <div class="stock-row">
           <div class="stock-dot" style="background:${stockColor}"></div>
@@ -408,8 +499,10 @@ function renderPage() {
             <h4>Product Information</h4>
             <ul>
               <li>Product <span>${esc(product.name)}</span></li>
+              ${brand ? `<li>Brand <span>${esc(brand)}</span></li>` : ''}
               ${product.category ? `<li>Category <span>${esc(product.category)}</span></li>` : ''}
               ${product.strain_type && product.strain_type !== 'N/A' ? `<li>Strain Type <span>${esc(product.strain_type)}</span></li>` : ''}
+              ${lineage ? `<li>Lineage <span>${esc(lineage)}</span></li>` : ''}
               ${product.weight ? `<li>Weight / Size <span>${esc(product.weight)}</span></li>` : ''}
               <li>Price <span style="color:var(--green)">$${parseFloat(product.price).toFixed(2)}</span></li>
             </ul>
@@ -419,6 +512,7 @@ function renderPage() {
             <ul>
               ${product.thc_content ? `<li>THC <span>${esc(product.thc_content)}</span></li>` : ''}
               ${product.cbd_content ? `<li>CBD <span style="color:var(--green)">${esc(product.cbd_content)}</span></li>` : ''}
+              ${terpenes.length > 0 ? terpenes.map(t => `<li>${esc(t.name)} <span>${t.raw}%</span></li>`).join('') : ''}
               <li>Pesticides <span style="color:var(--success)">Not Detected</span></li>
               <li>Heavy Metals <span style="color:var(--success)">Not Detected</span></li>
               <li>Microbials <span style="color:var(--success)">Pass</span></li>
@@ -594,6 +688,41 @@ function showError(msg) {
       <a href="/" class="btn btn-outline" style="margin-top:20px;display:inline-flex;width:auto">Back to Shop</a>
     </div>
   `;
+}
+
+function parseTerpenes(str) {
+  if (!str) return [];
+  return str.split(',').map(t => {
+    const parts = t.trim().split(':');
+    const name = parts[0]?.trim() || '';
+    const raw = parseFloat(parts[1]) || 0;
+    return { name, raw: raw.toFixed(1), pct: raw * 50 }; // scale for visual bar
+  }).filter(t => t.name);
+}
+
+function parseCSV(str) {
+  if (!str) return [];
+  return str.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+const terpColors = {
+  myrcene:'#39ff14', limonene:'#f59e0b', caryophyllene:'#8b5cf6',
+  linalool:'#ec4899', pinene:'#22c55e', humulene:'#06b6d4',
+  terpinolene:'#f97316', ocimene:'#a855f7', bisabolol:'#14b8a6',
+  valencene:'#eab308', geraniol:'#fb7185', nerolidol:'#2dd4bf'
+};
+function getTerpColor(name) {
+  return terpColors[name.toLowerCase()] || 'var(--green)';
+}
+
+const effectEmojis = {
+  relaxed:'🧘', happy:'😊', sleepy:'😴', creative:'🎨', euphoric:'✨',
+  focused:'🎯', energetic:'⚡', uplifted:'🌟', calm:'🌊', hungry:'🍕',
+  talkative:'💬', giggly:'😄', tingly:'🌀', aroused:'🔥',
+  'pain relief':'💪', 'stress relief':'🧠'
+};
+function getEffectEmoji(effect) {
+  return effectEmojis[effect.toLowerCase()] || '🌿';
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }

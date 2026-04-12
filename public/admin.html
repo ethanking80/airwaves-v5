@@ -527,7 +527,7 @@ tr.clickable-row:hover td{background:rgba(57,255,20,.05)}
       <div class="field"><label>Price ($)</label><input type="number" step="0.01" id="prodPrice"></div>
       <div class="field full"><label>Description</label><textarea id="prodDesc" rows="3"></textarea></div>
       <div class="field"><label>Category</label>
-        <select id="prodCategory"><option>Flower</option><option>Pre-Rolls</option><option>Edibles</option><option>Tinctures</option><option>Topicals</option><option>Concentrates</option><option>Accessories</option><option>General</option></select>
+        <select id="prodCategory"><option>Flower</option><option>Cartridges</option><option>Pre-Rolls</option><option>Edibles</option><option>Tinctures</option><option>Topicals</option><option>Concentrates</option><option>Accessories</option><option>General</option></select>
       </div>
       <div class="field"><label>Strain Type</label>
         <select id="prodStrain"><option value="">N/A</option><option>Indica</option><option>Sativa</option><option>Hybrid</option></select>
@@ -548,6 +548,12 @@ tr.clickable-row:hover td{background:rgba(57,255,20,.05)}
       <div class="field"><label>Active / Visible</label>
         <select id="prodActive"><option value="true">Yes — visible in store</option><option value="false">No — hidden from store</option></select>
       </div>
+      <div class="field full"><label>Brand</label><input type="text" id="prodBrand" placeholder="e.g. AIRWAVES, House Blend"></div>
+      <div class="field full"><label>Terpenes <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(comma-separated, e.g. Myrcene:0.8,Limonene:0.5,Caryophyllene:0.3)</span></label><input type="text" id="prodTerpenes" placeholder="Myrcene:0.8,Limonene:0.5,Caryophyllene:0.3"></div>
+      <div class="field full"><label>Effects <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(comma-separated)</span></label><input type="text" id="prodEffects" placeholder="Relaxed,Happy,Sleepy,Creative"></div>
+      <div class="field full"><label>Flavor Notes <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(comma-separated)</span></label><input type="text" id="prodFlavors" placeholder="Earthy,Pine,Citrus,Berry"></div>
+      <div class="field"><label>Lineage / Genetics</label><input type="text" id="prodLineage" placeholder="e.g. OG Kush x Durban Poison"></div>
+      <div class="field"><label>Best For / Use Cases</label><input type="text" id="prodUseCases" placeholder="e.g. Evening,Pain Relief,Sleep"></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:16px">
       <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
@@ -996,6 +1002,12 @@ function openProductForm(product = null) {
   document.getElementById('prodImage').value = product?.image_url || '';
   document.getElementById('prodFeatured').value = product?.featured ? 'true' : 'false';
   document.getElementById('prodActive').value = (product?.active === false) ? 'false' : 'true';
+  document.getElementById('prodBrand').value = product?.brand || '';
+  document.getElementById('prodTerpenes').value = product?.terpenes || '';
+  document.getElementById('prodEffects').value = product?.effects || '';
+  document.getElementById('prodFlavors').value = product?.flavor_notes || '';
+  document.getElementById('prodLineage').value = product?.lineage || '';
+  document.getElementById('prodUseCases').value = product?.use_cases || '';
   updateImagePreview();
   document.getElementById('productModal').classList.add('show');
 }
@@ -1023,7 +1035,13 @@ async function saveProduct() {
     stock: parseInt(document.getElementById('prodStock').value) || 0,
     image_url: document.getElementById('prodImage').value.trim(),
     featured: document.getElementById('prodFeatured').value === 'true',
-    active: document.getElementById('prodActive').value === 'true'
+    active: document.getElementById('prodActive').value === 'true',
+    brand: document.getElementById('prodBrand').value.trim(),
+    terpenes: document.getElementById('prodTerpenes').value.trim(),
+    effects: document.getElementById('prodEffects').value.trim(),
+    flavor_notes: document.getElementById('prodFlavors').value.trim(),
+    lineage: document.getElementById('prodLineage').value.trim(),
+    use_cases: document.getElementById('prodUseCases').value.trim()
   };
   if (!body.name || !body.price) { toast('Name and price are required', true); return; }
   try {
@@ -1574,14 +1592,20 @@ function showProductDetail(id) {
   const r = productRatings[p.id] || { average: 0, count: 0 };
   openDetail(p.name, [
     { label: 'Product ID', value: String(p.id) },
+    { label: 'Brand', value: p.brand || '—' },
     { label: 'Price', html: `<span style="color:var(--green);font-weight:700">$${parseFloat(p.price).toFixed(2)}</span>` },
     { label: 'Category', value: p.category || '—' },
     { label: 'Strain Type', value: p.strain_type || 'N/A' },
+    { label: 'Lineage', value: p.lineage || '—' },
     { label: 'THC Content', value: p.thc_content || '—' },
     { label: 'CBD Content', value: p.cbd_content || '—' },
     { label: 'Weight/Size', value: p.weight || '—' },
     { label: 'Stock', value: String(p.stock ?? 0) },
     { label: 'Description', value: p.description || '—', full: true },
+    { label: 'Terpenes', value: p.terpenes || '—', full: true },
+    { label: 'Effects', value: p.effects || '—', full: true },
+    { label: 'Flavor Notes', value: p.flavor_notes || '—', full: true },
+    { label: 'Best For', value: p.use_cases || '—', full: true },
     { label: 'Rating', html: `<span style="color:var(--warning);font-size:1.1rem;letter-spacing:2px">${renderStars(r.average)}</span> <span style="color:var(--text-dim)">${r.average.toFixed(1)}/5 (${r.count} review${r.count !== 1 ? 's' : ''})</span>` },
     { label: 'Featured', value: p.featured ? 'Yes' : 'No' },
     { label: 'Active', value: p.active === false ? 'No — Hidden' : 'Yes — Visible' },

@@ -181,6 +181,9 @@ main{max-width:1200px;margin:0 auto;padding:0 24px 80px}
 .product-info .potency-tag{font-size:.7rem;padding:3px 8px;border-radius:50px;font-weight:600}
 .product-info .potency-tag.thc{background:rgba(57,255,20,.1);color:var(--green);border:1px solid rgba(57,255,20,.2)}
 .product-info .potency-tag.cbd-tag{background:rgba(6,182,212,.1);color:var(--blue);border:1px solid rgba(6,182,212,.2)}
+.product-info .effects-preview{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.product-info .effects-preview .ep-tag{font-size:.68rem;padding:2px 8px;border-radius:50px;background:var(--surface2);color:var(--text-dim);border:1px solid var(--surface3);white-space:nowrap}
+.product-info .brand-tag{font-size:.68rem;font-weight:700;color:var(--blue);letter-spacing:.04em;margin-bottom:2px}
 .product-footer{display:flex;align-items:center;justify-content:space-between;padding:0 16px 16px}
 .product-price{font-family:'Archivo Black',sans-serif;font-size:1.2rem;color:var(--green)}
 .add-cart-btn{background:var(--green);color:#000;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;transition:all .2s}
@@ -1304,6 +1307,12 @@ function renderProducts() {
         </div>`
       : '';
 
+    const effectsArr = (p.effects || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 3);
+    const effectsHtml = effectsArr.length > 0
+      ? `<div class="effects-preview">${effectsArr.map(e => `<span class="ep-tag">${esc(e)}</span>`).join('')}</div>`
+      : '';
+    const brandHtml = p.brand ? `<div class="brand-tag">${esc(p.brand)}</div>` : '';
+
     return `
     <div class="product-card" onclick="openProduct(${p.id})">
       ${badgeHtml}
@@ -1312,10 +1321,12 @@ function renderProducts() {
         ${p.image_url ? `<img src="${p.image_url}" alt="${esc(p.name)}" loading="lazy">` : '<div class="placeholder-icon">&#x1f33f;</div>'}
       </div>
       <div class="product-info">
+        ${brandHtml}
         <div class="cat">${esc(p.category || '')}</div>
         <h3>${esc(p.name)}</h3>
         <div class="desc">${esc(p.description || '')}</div>
         ${potencyHtml}
+        ${effectsHtml}
         <div class="meta">
           ${p.weight ? `<span>${esc(p.weight)}</span>` : ''}
           ${p.stock > 0 ? '<span style="color:var(--success)">In Stock</span>' : '<span style="color:var(--danger)">Sold Out</span>'}

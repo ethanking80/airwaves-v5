@@ -45,11 +45,11 @@ export default async (req, context) => {
     // POST - create product (admin)
     if (req.method === 'POST') {
       const body = await req.json();
-      const { name, description, price, image_url, category: cat, strain_type, thc_content, cbd_content, weight, stock, featured: feat } = body;
+      const { name, description, price, image_url, category: cat, strain_type, thc_content, cbd_content, weight, stock, featured: feat, brand, terpenes, effects, flavor_notes, lineage, use_cases } = body;
       if (!name || !price) return new Response(JSON.stringify({ error: 'Name and price are required' }), { status: 400, headers });
       const [product] = await sql`
-        INSERT INTO products (name, description, price, image_url, category, strain_type, thc_content, cbd_content, weight, stock, featured)
-        VALUES (${name}, ${description || ''}, ${price}, ${image_url || ''}, ${cat || 'General'}, ${strain_type || ''}, ${thc_content || ''}, ${cbd_content || ''}, ${weight || ''}, ${stock || 0}, ${feat || false})
+        INSERT INTO products (name, description, price, image_url, category, strain_type, thc_content, cbd_content, weight, stock, featured, brand, terpenes, effects, flavor_notes, lineage, use_cases)
+        VALUES (${name}, ${description || ''}, ${price}, ${image_url || ''}, ${cat || 'General'}, ${strain_type || ''}, ${thc_content || ''}, ${cbd_content || ''}, ${weight || ''}, ${stock || 0}, ${feat || false}, ${brand || ''}, ${terpenes || ''}, ${effects || ''}, ${flavor_notes || ''}, ${lineage || ''}, ${use_cases || ''})
         RETURNING *
       `;
       return new Response(JSON.stringify(product), { status: 201, headers });
@@ -59,9 +59,9 @@ export default async (req, context) => {
     if (req.method === 'PUT') {
       if (!productId) return new Response(JSON.stringify({ error: 'Product ID required' }), { status: 400, headers });
       const body = await req.json();
-      const { name, description, price, image_url, category: cat, strain_type, thc_content, cbd_content, weight, stock, featured: feat, active } = body;
+      const { name, description, price, image_url, category: cat, strain_type, thc_content, cbd_content, weight, stock, featured: feat, active, brand, terpenes, effects, flavor_notes, lineage, use_cases } = body;
       const [product] = await sql`
-        UPDATE products SET 
+        UPDATE products SET
           name = COALESCE(${name}, name),
           description = COALESCE(${description}, description),
           price = COALESCE(${price}, price),
@@ -73,7 +73,13 @@ export default async (req, context) => {
           weight = COALESCE(${weight}, weight),
           stock = COALESCE(${stock !== undefined ? stock : null}, stock),
           featured = COALESCE(${feat !== undefined ? feat : null}, featured),
-          active = COALESCE(${active !== undefined ? active : null}, active)
+          active = COALESCE(${active !== undefined ? active : null}, active),
+          brand = COALESCE(${brand}, brand),
+          terpenes = COALESCE(${terpenes}, terpenes),
+          effects = COALESCE(${effects}, effects),
+          flavor_notes = COALESCE(${flavor_notes}, flavor_notes),
+          lineage = COALESCE(${lineage}, lineage),
+          use_cases = COALESCE(${use_cases}, use_cases)
         WHERE id = ${productId}
         RETURNING *
       `;
