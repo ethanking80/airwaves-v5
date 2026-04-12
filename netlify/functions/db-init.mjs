@@ -261,8 +261,13 @@ export default async (req, context) => {
     const prodCount = parseInt(existingProducts[0].count);
     // Check if catalog needs upgrade (old 8-product seed or empty)
     if (prodCount < 20) {
-      // Remove old seed products to reseed fresh
-      if (prodCount > 0) await sql`DELETE FROM products`;
+      // Remove old seed products to reseed fresh (clear FK deps first)
+      if (prodCount > 0) {
+        await sql`DELETE FROM cart_items`;
+        await sql`DELETE FROM order_items WHERE true`;
+        await sql`DELETE FROM reviews`;
+        await sql`DELETE FROM products`;
+      }
 
       const catalog = [
         // === FLOWER (6) ===
