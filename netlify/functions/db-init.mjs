@@ -344,11 +344,13 @@ export default async (req, context) => {
         VALUES (${p.name}, ${p.desc}, ${p.price}, ${p.cat}, ${p.strain}, ${p.thc}, ${p.cbd}, ${p.wt}, ${p.stock}, ${p.feat}, ${p.img}, ${p.brand}, ${p.terp}, ${p.effects}, ${p.flavors}, ${p.lineage}, ${p.uses})`;
       }
 
-      // Seed variants for all products
-      await sql`DELETE FROM product_variants`;
+    }
+
+    // Seed variants if none exist
+    const existingVariants = await sql`SELECT COUNT(*) as count FROM product_variants`;
+    if (parseInt(existingVariants[0].count) === 0) {
       const allProds = await sql`SELECT id, name, category, price, stock FROM products`;
 
-      // Variant templates by category
       const variantTemplates = {
         'Flower': [
           { label:'1g', weight:'1g', priceMult:0.35, stockMult:2 },
@@ -393,7 +395,7 @@ export default async (req, context) => {
 
       for (const prod of allProds) {
         const templates = variantTemplates[prod.category];
-        if (!templates) continue; // Accessories don't get variants
+        if (!templates) continue;
         for (let i = 0; i < templates.length; i++) {
           const v = templates[i];
           const price = (parseFloat(prod.price) * v.priceMult).toFixed(2);
