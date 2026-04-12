@@ -159,6 +159,10 @@ export default async (req, context) => {
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS weight VARCHAR(50)`;
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT ''`;
 
+    // Widen content columns for longer values
+    await sql`ALTER TABLE products ALTER COLUMN thc_content TYPE VARCHAR(100)`;
+    await sql`ALTER TABLE products ALTER COLUMN cbd_content TYPE VARCHAR(100)`;
+
     // v4.7 — rich product fields
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR(100) DEFAULT ''`;
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS terpenes TEXT DEFAULT ''`;
