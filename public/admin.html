@@ -1075,8 +1075,8 @@ async function loadOrders() {
           const payLabel = o.payment_method === 'btc' ? '₿ BTC' : o.payment_method === 'xmr' ? 'ɱ XMR' : o.payment_method === 'cash' ? '💵 Cash' : o.payment_method || '—';
           const delLabel = o.delivery_type === 'delivery' ? '🚗 ' + (o.delivery_borough || 'NYC') : '📦 Ship';
           const devLabel = o.device_info ? esc(o.device_info) : '<span style="color:var(--text-muted)">—</span>';
-          return `<tr class="clickable-row" onclick="showFullOrderDetail(${o.id})">
-          <td>#${o.id}</td>
+          return `<tr class="clickable-row" onclick="showFullOrderDetail('${o.id}')">
+          <td>#${o.order_number || o.id}</td>
           <td>${esc(o.customer_name || 'N/A')}<br><span style="font-size:.75rem;color:var(--text-muted)">${esc(o.customer_email || '')}</span></td>
           <td style="color:var(--green);font-weight:600">$${parseFloat(o.total).toFixed(2)}</td>
           <td style="font-size:.82rem">${payLabel}</td>
@@ -1085,14 +1085,14 @@ async function loadOrders() {
           <td><span class="status-badge status-${o.status}">${o.status}</span></td>
           <td style="color:var(--text-dim);font-size:.82rem">${new Date(o.created_at).toLocaleDateString()}</td>
           <td style="white-space:nowrap" onclick="event.stopPropagation()">
-            <select onchange="updateOrderStatus(${o.id}, this.value)" style="padding:6px 10px;font-size:.8rem;width:auto">
+            <select onchange="updateOrderStatus('${o.id}', this.value)" style="padding:6px 10px;font-size:.8rem;width:auto">
               <option ${o.status==='pending'?'selected':''}>pending</option>
               <option ${o.status==='shipped'?'selected':''}>shipped</option>
               <option ${o.status==='delivered'?'selected':''}>delivered</option>
               <option ${o.status==='cancelled'?'selected':''}>cancelled</option>
             </select>
-            <button class="btn btn-secondary btn-sm" onclick="editOrder(${o.id})" style="margin-left:4px">Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})" style="margin-left:4px">Delete</button>
+            <button class="btn btn-secondary btn-sm" onclick="editOrder('${o.id}')" style="margin-left:4px">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteOrder('${o.id}')" style="margin-left:4px">Delete</button>
           </td>
         </tr>`;
         }).join('');
@@ -1584,14 +1584,11 @@ async function showOrderDetail(orderId) {
   try {
     full = await api('/api/orders?id=' + orderId);
   } catch {
-    // Fallback to cached data
     const o = allOrders.find(x => x.id === orderId);
     if (!o) return;
     full = o;
   }
   const o = full;
-  const payLabel = o.payment_method === 'btc' ? 'BTC' : o.payment_method === 'xmr' ? 'XMR' : o.payment_method === 'cash' ? 'Cash' : o.payment_method || '—';
-  const delLabel = o.delivery_type === 'delivery' ? 'Delivery' + (o.delivery_borough ? ' (' + o.delivery_borough + ')' : '') : o.delivery_type === 'shipping' ? 'Shipping' : '—';
 
   // Order items
   const items = full.items || [];
@@ -1605,19 +1602,48 @@ async function showOrderDetail(orderId) {
     ? `<div style="margin-top:4px;max-height:200px;overflow-y:auto">${log.map(l => `<div style="padding:8px 0;border-bottom:1px solid var(--surface2);font-size:.82rem"><span style="color:var(--text-muted)">${new Date(l.created_at).toLocaleString()}</span> <strong style="color:${l.action === 'created' ? 'var(--success)' : l.action === 'updated' ? 'var(--warning)' : l.action === 'deleted' ? 'var(--danger)' : 'var(--blue)'}">${esc(l.action)}</strong><br><span style="color:var(--text-dim)">${esc(l.details)}</span>${l.performed_by ? `<br><span style="color:var(--text-muted);font-size:.75rem">by ${esc(l.performed_by)}</span>` : ''}</div>`).join('')}</div>`
     : '<span style="color:var(--text-muted)">No log entries yet</span>';
 
-  openDetail('Order #' + o.id, [
-    { label: 'Customer', value: o.customer_name || 'N/A' },
-    { label: 'Email', value: o.customer_email || '—' },
-    { label: 'Total', html: `<span style="color:var(--green);font-weight:700">$${parseFloat(o.total).toFixed(2)}</span>` },
-    { label: 'Status', html: `<span class="status-badge status-${o.status}">${o.status}</span>` },
-    { label: 'Payment', value: payLabel },
-    { label: 'Delivery', value: delLabel },
-    { label: 'Shipping Address', value: o.shipping_address || '—', full: true },
-    { label: 'Device', value: o.device_info || '—' },
-    { label: 'Date', value: o.created_at ? new Date(o.created_at).toLocaleString() : '—' },
-    { label: 'Order Items', html: itemsHtml, full: true },
-    { label: 'Order Log', html: logHtml, full: true },
-  ], { onEdit: () => { closeDetail(); editOrder(o.id); } });
+  // Build editable fields + read-only sections
+  const fieldsHtml = `
+    <div class="detail-field"><div class="detail-label">Customer Name</div><div class="detail-value"><input type="text" id="odName" value="${esc(o.customer_name || '')}" style="margin-top:4px"></div></div>
+    <div class="detail-field"><div class="detail-label">Email</div><div class="detail-value"><input type="email" id="odEmail" value="${esc(o.customer_email || '')}" style="margin-top:4px"></div></div>
+    <div class="detail-field"><div class="detail-label">Total ($)</div><div class="detail-value"><input type="number" step="0.01" id="odTotal" value="${parseFloat(o.total || 0).toFixed(2)}" style="margin-top:4px"></div></div>
+    <div class="detail-field"><div class="detail-label">Status</div><div class="detail-value"><select id="odStatus" style="margin-top:4px"><option value="pending" ${o.status==='pending'?'selected':''}>Pending</option><option value="shipped" ${o.status==='shipped'?'selected':''}>Shipped</option><option value="delivered" ${o.status==='delivered'?'selected':''}>Delivered</option><option value="cancelled" ${o.status==='cancelled'?'selected':''}>Cancelled</option></select></div></div>
+    <div class="detail-field"><div class="detail-label">Payment Method</div><div class="detail-value"><select id="odPayment" style="margin-top:4px"><option value="cash" ${o.payment_method==='cash'?'selected':''}>Cash</option><option value="btc" ${o.payment_method==='btc'?'selected':''}>BTC</option><option value="xmr" ${o.payment_method==='xmr'?'selected':''}>XMR</option></select></div></div>
+    <div class="detail-field"><div class="detail-label">Delivery Type</div><div class="detail-value"><select id="odDelivery" style="margin-top:4px"><option value="delivery" ${o.delivery_type==='delivery'?'selected':''}>Delivery</option><option value="shipping" ${o.delivery_type==='shipping'?'selected':''}>Shipping</option></select></div></div>
+    <div class="detail-field full"><div class="detail-label">Shipping Address</div><div class="detail-value"><textarea id="odAddress" rows="2" style="margin-top:4px">${esc(o.shipping_address || '')}</textarea></div></div>
+    <div class="detail-field"><div class="detail-label">Borough</div><div class="detail-value"><input type="text" id="odBorough" value="${esc(o.delivery_borough || '')}" style="margin-top:4px"></div></div>
+    <div class="detail-field"><div class="detail-label">Device</div><div class="detail-value" style="color:var(--text-dim);font-size:.85rem">${esc(o.device_info || '—')}</div></div>
+    <div class="detail-field"><div class="detail-label">Order ID</div><div class="detail-value" style="color:var(--text-muted);font-size:.8rem;font-family:monospace">${esc(o.id)}</div></div>
+    <div class="detail-field"><div class="detail-label">Date</div><div class="detail-value" style="color:var(--text-dim)">${o.created_at ? new Date(o.created_at).toLocaleString() : '—'}</div></div>
+    <div class="detail-field full"><div class="detail-label">Order Items</div><div class="detail-value">${itemsHtml}</div></div>
+    <div class="detail-field full"><div class="detail-label">Order Log</div><div class="detail-value">${logHtml}</div></div>
+  `;
+
+  document.getElementById('detailTitle').textContent = 'Order #' + (o.order_number || o.id);
+  document.getElementById('detailBody').innerHTML = fieldsHtml;
+
+  detailSaveHandler = async () => {
+    const data = {
+      customer_name: document.getElementById('odName').value,
+      customer_email: document.getElementById('odEmail').value,
+      total: document.getElementById('odTotal').value,
+      status: document.getElementById('odStatus').value,
+      payment_method: document.getElementById('odPayment').value,
+      delivery_type: document.getElementById('odDelivery').value,
+      shipping_address: document.getElementById('odAddress').value,
+      delivery_borough: document.getElementById('odBorough').value,
+    };
+    try {
+      await api('/api/orders?id=' + o.id, { method: 'PUT', body: JSON.stringify(data) });
+      toast('Order saved!');
+      closeDetail();
+      loadOrders();
+    } catch (err) { toast('Error: ' + err.message, true); }
+  };
+  detailEditHandler = null;
+  document.getElementById('detailActions').innerHTML = `<button class="btn btn-primary" onclick="detailSave()">Save</button><button class="btn btn-secondary" onclick="closeDetail()">Close</button>`;
+  document.getElementById('detailModal').classList.add('show');
+  document.getElementById('detailModal').style.display = 'flex';
 
   // Log the view
   try { await api('/api/orders?id=' + orderId + '&action=log-view'); } catch {}
