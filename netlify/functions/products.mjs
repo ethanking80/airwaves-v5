@@ -26,6 +26,8 @@ export default async (req, context) => {
       if (productId) {
         const [product] = await sql`SELECT * FROM products WHERE id = ${productId}`;
         if (!product) return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404, headers });
+        const variants = await sql`SELECT * FROM product_variants WHERE product_id = ${productId} ORDER BY sort_order`;
+        product.variants = variants;
         return new Response(JSON.stringify(product), { status: 200, headers });
       }
       
@@ -38,6 +40,21 @@ export default async (req, context) => {
         products = await sql`SELECT * FROM products WHERE active = true AND (LOWER(name) LIKE ${'%' + search.toLowerCase() + '%'} OR LOWER(description) LIKE ${'%' + search.toLowerCase() + '%'}) ORDER BY featured DESC, created_at DESC`;
       } else {
         products = await sql`SELECT * FROM products WHERE active = true ORDER BY featured DESC, created_at DESC`;
+      }
+      // Attach variant summary to each product
+      if (products.length > 0) {
+        const ids = products.map(p => p.id);
+        const variants = await sql`SELECT product_id, MIN(price) as min_price, MAX(price) as max_price, COUNT(*) as variant_count FROM product_variants WHERE product_id = ANY(${ids}) GROUP BY product_id`;
+        const varMap = {};
+        variants.forEach(v => { varMap[v.product_id] = v; });
+        products.forEach(p => {
+          const vs = varMap[p.id];
+          if (vs) {
+            p.variant_count = parseInt(vs.variant_count);
+            p.min_price = parseFloat(vs.min_price);
+            p.max_price = parseFloat(vs.max_price);
+          }
+        });
       }
       return new Response(JSON.stringify(products), { status: 200, headers });
     }

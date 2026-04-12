@@ -1586,14 +1586,23 @@ function showOrderDetail(o) {
 }
 
 // --- Products section: clickable card detail ---
-function showProductDetail(id) {
+async function showProductDetail(id) {
   const p = allProducts.find(x => x.id === id);
   if (!p) return;
   const r = productRatings[p.id] || { average: 0, count: 0 };
+  // Fetch variants
+  let variants = [];
+  try {
+    const full = await api('/api/products?id=' + id);
+    variants = full.variants || [];
+  } catch {}
+  const variantsHtml = variants.length > 0
+    ? `<table style="width:100%;font-size:.85rem;margin-top:4px"><thead><tr><th style="text-align:left;padding:4px 8px;color:var(--text-muted);font-size:.72rem">SIZE</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-size:.72rem">PRICE</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-size:.72rem">STOCK</th></tr></thead><tbody>${variants.map(v => `<tr><td style="padding:4px 8px">${esc(v.label)}</td><td style="padding:4px 8px;text-align:right;color:var(--green);font-weight:600">$${parseFloat(v.price).toFixed(2)}</td><td style="padding:4px 8px;text-align:right">${v.stock}</td></tr>`).join('')}</tbody></table>`
+    : '<span style="color:var(--text-muted)">No variants — uses base price</span>';
   openDetail(p.name, [
     { label: 'Product ID', value: String(p.id) },
     { label: 'Brand', value: p.brand || '—' },
-    { label: 'Price', html: `<span style="color:var(--green);font-weight:700">$${parseFloat(p.price).toFixed(2)}</span>` },
+    { label: 'Base Price', html: `<span style="color:var(--green);font-weight:700">$${parseFloat(p.price).toFixed(2)}</span>` },
     { label: 'Category', value: p.category || '—' },
     { label: 'Strain Type', value: p.strain_type || 'N/A' },
     { label: 'Lineage', value: p.lineage || '—' },
@@ -1601,6 +1610,7 @@ function showProductDetail(id) {
     { label: 'CBD Content', value: p.cbd_content || '—' },
     { label: 'Weight/Size', value: p.weight || '—' },
     { label: 'Stock', value: String(p.stock ?? 0) },
+    { label: 'Size Variants', html: variantsHtml, full: true },
     { label: 'Description', value: p.description || '—', full: true },
     { label: 'Terpenes', value: p.terpenes || '—', full: true },
     { label: 'Effects', value: p.effects || '—', full: true },

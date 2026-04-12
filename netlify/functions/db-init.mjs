@@ -171,6 +171,24 @@ export default async (req, context) => {
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS lineage VARCHAR(255) DEFAULT ''`;
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS use_cases TEXT DEFAULT ''`;
 
+    // v4.7 — product variants table
+    await sql`
+      CREATE TABLE IF NOT EXISTS product_variants (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+        label VARCHAR(100) NOT NULL,
+        weight VARCHAR(50) NOT NULL,
+        price DECIMAL(10,2) NOT NULL,
+        stock INTEGER DEFAULT 0,
+        sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    // Add variant_id to cart_items
+    await sql`ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS variant_id INTEGER REFERENCES product_variants(id) ON DELETE SET NULL`;
+    // Add variant_label to order_items for historical record
+    await sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_label VARCHAR(100) DEFAULT ''`;
+
     // Reviews table migrations
     await sql`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewer_name VARCHAR(255)`;
     await sql`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS title VARCHAR(255)`;
@@ -324,6 +342,65 @@ export default async (req, context) => {
       for (const p of catalog) {
         await sql`INSERT INTO products (name, description, price, category, strain_type, thc_content, cbd_content, weight, stock, featured, image_url, brand, terpenes, effects, flavor_notes, lineage, use_cases)
         VALUES (${p.name}, ${p.desc}, ${p.price}, ${p.cat}, ${p.strain}, ${p.thc}, ${p.cbd}, ${p.wt}, ${p.stock}, ${p.feat}, ${p.img}, ${p.brand}, ${p.terp}, ${p.effects}, ${p.flavors}, ${p.lineage}, ${p.uses})`;
+      }
+
+      // Seed variants for all products
+      await sql`DELETE FROM product_variants`;
+      const allProds = await sql`SELECT id, name, category, price, stock FROM products`;
+
+      // Variant templates by category
+      const variantTemplates = {
+        'Flower': [
+          { label:'1g', weight:'1g', priceMult:0.35, stockMult:2 },
+          { label:'Eighth (3.5g)', weight:'3.5g', priceMult:1, stockMult:1 },
+          { label:'Quarter (7g)', weight:'7g', priceMult:1.85, stockMult:0.7 },
+          { label:'Half Oz (14g)', weight:'14g', priceMult:3.4, stockMult:0.5 },
+          { label:'Ounce (28g)', weight:'28g', priceMult:6.2, stockMult:0.3 },
+        ],
+        'Pre-Rolls': [
+          { label:'Single', weight:'1g', priceMult:0.35, stockMult:2 },
+          { label:'3-Pack', weight:'3g', priceMult:0.85, stockMult:1 },
+          { label:'5-Pack', weight:'5g', priceMult:1, stockMult:0.8 },
+          { label:'10-Pack', weight:'10g', priceMult:1.8, stockMult:0.5 },
+        ],
+        'Cartridges': [
+          { label:'0.5g Cart', weight:'0.5g', priceMult:0.6, stockMult:1.5 },
+          { label:'1g Cart', weight:'1g', priceMult:1, stockMult:1 },
+          { label:'2g Cart (XL)', weight:'2g', priceMult:1.8, stockMult:0.5 },
+        ],
+        'Edibles': [
+          { label:'5-Count', weight:'5ct', priceMult:0.35, stockMult:1.5 },
+          { label:'10-Count', weight:'10ct', priceMult:0.6, stockMult:1.2 },
+          { label:'20-Count', weight:'20ct', priceMult:1, stockMult:1 },
+          { label:'40-Count', weight:'40ct', priceMult:1.8, stockMult:0.5 },
+        ],
+        'Tinctures': [
+          { label:'15ml', weight:'15ml', priceMult:0.55, stockMult:1.5 },
+          { label:'30ml', weight:'30ml', priceMult:1, stockMult:1 },
+          { label:'60ml', weight:'60ml', priceMult:1.8, stockMult:0.6 },
+        ],
+        'Concentrates': [
+          { label:'0.5g', weight:'0.5g', priceMult:0.55, stockMult:1.5 },
+          { label:'1g', weight:'1g', priceMult:1, stockMult:1 },
+          { label:'3.5g', weight:'3.5g', priceMult:2.8, stockMult:0.4 },
+        ],
+        'Topicals': [
+          { label:'1oz', weight:'1oz', priceMult:0.55, stockMult:1.5 },
+          { label:'2oz', weight:'2oz', priceMult:1, stockMult:1 },
+          { label:'4oz', weight:'4oz', priceMult:1.8, stockMult:0.6 },
+        ],
+      };
+
+      for (const prod of allProds) {
+        const templates = variantTemplates[prod.category];
+        if (!templates) continue; // Accessories don't get variants
+        for (let i = 0; i < templates.length; i++) {
+          const v = templates[i];
+          const price = (parseFloat(prod.price) * v.priceMult).toFixed(2);
+          const stock = Math.max(1, Math.round(prod.stock * v.stockMult));
+          await sql`INSERT INTO product_variants (product_id, label, weight, price, stock, sort_order)
+            VALUES (${prod.id}, ${v.label}, ${v.weight}, ${price}, ${stock}, ${i})`;
+        }
       }
     }
 
