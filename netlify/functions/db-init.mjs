@@ -193,7 +193,7 @@ export default async (req, context) => {
     await sql`
       CREATE TABLE IF NOT EXISTS order_log (
         id SERIAL PRIMARY KEY,
-        order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+        order_id INTEGER NOT NULL,
         action VARCHAR(100) NOT NULL,
         details TEXT DEFAULT '',
         performed_by VARCHAR(255) DEFAULT '',
