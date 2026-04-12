@@ -1484,6 +1484,7 @@ function openSettingsPanel(panel) {
 // Detail modal system — view & edit for all admin items
 let dashboardData = {};
 let detailSaveHandler = null;
+let detailEditHandler = null;
 
 function openDetail(title, fields, opts = {}) {
   document.getElementById('detailTitle').textContent = title;
@@ -1495,13 +1496,15 @@ function openDetail(title, fields, opts = {}) {
   ).join('');
   // Build action buttons
   const actionsEl = document.getElementById('detailActions');
+  detailSaveHandler = null;
+  detailEditHandler = null;
   if (opts.onSave) {
     detailSaveHandler = opts.onSave;
     actionsEl.innerHTML = `<button class="btn btn-primary" onclick="detailSave()">Save</button><button class="btn btn-secondary" onclick="closeDetail()">Close</button>`;
   } else if (opts.onEdit) {
-    actionsEl.innerHTML = `<button class="btn btn-primary" onclick="(${opts.onEdit.toString()})()">Edit</button><button class="btn btn-secondary" onclick="closeDetail()">Close</button>`;
+    detailEditHandler = opts.onEdit;
+    actionsEl.innerHTML = `<button class="btn btn-primary" onclick="detailEdit()">Edit</button><button class="btn btn-secondary" onclick="closeDetail()">Close</button>`;
   } else {
-    detailSaveHandler = null;
     actionsEl.innerHTML = `<button class="btn btn-secondary" onclick="closeDetail()">Close</button>`;
   }
   document.getElementById('detailModal').classList.add('show');
@@ -1512,10 +1515,15 @@ function closeDetail() {
   document.getElementById('detailModal').classList.remove('show');
   document.getElementById('detailModal').style.display = 'none';
   detailSaveHandler = null;
+  detailEditHandler = null;
 }
 
 async function detailSave() {
   if (detailSaveHandler) await detailSaveHandler();
+}
+
+function detailEdit() {
+  if (detailEditHandler) detailEditHandler();
 }
 
 // --- Dashboard: Logins ---
