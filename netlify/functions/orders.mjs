@@ -2,6 +2,23 @@ import { neon } from '@netlify/neon';
 
 const sql = neon();
 
+async function logOrderEvent(orderId, action, details = '', performedBy = '') {
+  try {
+    await sql`INSERT INTO order_log (order_id, action, details, performed_by) VALUES (${orderId}, ${action}, ${details}, ${performedBy})`;
+  } catch (e) { console.error('Order log error:', e.message); }
+}
+
+function getAdminName(req) {
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return '';
+    const token = authHeader.replace('Bearer ', '');
+    const [data] = token.split('.');
+    const payload = JSON.parse(Buffer.from(data, 'base64url').toString());
+    return payload.name || payload.email || 'Admin #' + payload.id;
+  } catch { return ''; }
+}
+
 const headers = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
@@ -36,10 +53,20 @@ export default async (req, context) => {
     // GET - list orders
     if (req.method === 'GET') {
       if (orderId) {
+        const action = url.searchParams.get('action');
+
+        // Log a view event
+        if (action === 'log-view') {
+          const admin = getAdminName(req);
+          await logOrderEvent(orderId, 'viewed', 'Order viewed by admin', admin);
+          return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+        }
+
         const [order] = await sql`SELECT * FROM orders WHERE id = ${orderId}`;
         if (!order) return new Response(JSON.stringify({ error: 'Order not found' }), { status: 404, headers });
         const items = await sql`SELECT * FROM order_items WHERE order_id = ${orderId}`;
-        return new Response(JSON.stringify({ ...order, items }), { status: 200, headers });
+        const log = await sql`SELECT * FROM order_log WHERE order_id = ${orderId} ORDER BY created_at DESC`;
+        return new Response(JSON.stringify({ ...order, items, log }), { status: 200, headers });
       }
       // Admin: get all orders
       if (allOrders === 'true') {
@@ -71,6 +98,8 @@ export default async (req, context) => {
           VALUES (${'admin_manual'}, ${parseFloat(total).toFixed(2)}, ${customer_name || ''}, ${customer_email || ''}, ${shipping_address || ''}, ${status || 'pending'}, ${payment_method}, ${delivery_type || 'delivery'}, ${delivery_borough || ''}, 'pending')
           RETURNING *
         `;
+        const admin = getAdminName(req);
+        await logOrderEvent(order.id, 'created', `Order created manually by admin. Total: $${parseFloat(total).toFixed(2)}, Payment: ${payment_method}`, admin);
         return new Response(JSON.stringify({ success: true, order }), { status: 201, headers });
       }
 
@@ -112,6 +141,7 @@ export default async (req, context) => {
       // Clear cart
       await sql`DELETE FROM cart_items WHERE session_id = ${sessionId}`;
 
+      await logOrderEvent(order.id, 'created', `Order placed by customer. ${cartItems.length} item(s), Total: $${total.toFixed(2)}, Payment: ${payment_method}`, customer_name || customer_email || sessionId);
       return new Response(JSON.stringify({ success: true, order }), { status: 201, headers });
     }
 
@@ -120,6 +150,9 @@ export default async (req, context) => {
       if (!orderId) return new Response(JSON.stringify({ error: 'Order ID required' }), { status: 400, headers });
       const body = await req.json();
       const { status, customer_name, customer_email, shipping_address, payment_method, delivery_type, delivery_borough, total } = body;
+
+      // Get current order for change detection
+      const [currentOrder] = await sql`SELECT * FROM orders WHERE id = ${orderId}`;
 
       const fields = [];
       const values = {};
@@ -150,12 +183,30 @@ export default async (req, context) => {
           total = COALESCE(${values.total !== undefined ? values.total : null}, total)
           WHERE id = ${orderId} RETURNING *`;
       }
+      // Log changes
+      const admin = getAdminName(req);
+      if (currentOrder) {
+        const changes = [];
+        if (status !== undefined && status !== currentOrder.status) changes.push(`Status: ${currentOrder.status} → ${status}`);
+        if (customer_name !== undefined && customer_name !== currentOrder.customer_name) changes.push(`Customer name updated`);
+        if (customer_email !== undefined && customer_email !== currentOrder.customer_email) changes.push(`Email updated`);
+        if (shipping_address !== undefined && shipping_address !== currentOrder.shipping_address) changes.push(`Shipping address updated`);
+        if (payment_method !== undefined && payment_method !== currentOrder.payment_method) changes.push(`Payment: ${currentOrder.payment_method} → ${payment_method}`);
+        if (total !== undefined && parseFloat(total) !== parseFloat(currentOrder.total)) changes.push(`Total: $${parseFloat(currentOrder.total).toFixed(2)} → $${parseFloat(total).toFixed(2)}`);
+        if (delivery_type !== undefined && delivery_type !== currentOrder.delivery_type) changes.push(`Delivery: ${currentOrder.delivery_type} → ${delivery_type}`);
+        if (changes.length > 0) {
+          await logOrderEvent(orderId, 'updated', changes.join('; '), admin);
+        }
+      }
+
       return new Response(JSON.stringify({ success: true, order }), { status: 200, headers });
     }
 
     // DELETE - delete order (admin)
     if (req.method === 'DELETE') {
       if (!orderId) return new Response(JSON.stringify({ error: 'Order ID required' }), { status: 400, headers });
+      const admin = getAdminName(req);
+      await logOrderEvent(orderId, 'deleted', 'Order deleted by admin', admin);
       await sql`DELETE FROM order_items WHERE order_id = ${orderId}`;
       await sql`DELETE FROM orders WHERE id = ${orderId}`;
       return new Response(JSON.stringify({ success: true }), { status: 200, headers });

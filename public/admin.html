@@ -1102,7 +1102,8 @@ async function loadOrders() {
 async function updateOrderStatus(id, status) {
   try {
     await api('/api/orders?id=' + id, { method: 'PUT', body: JSON.stringify({ status }) });
-    toast('Order updated');
+    toast('Status → ' + status);
+    loadOrders();
   } catch (err) { toast('Error: ' + err.message, true); }
 }
 
@@ -1573,13 +1574,37 @@ function showReviewDetail(idx) {
 function showDashOrderDetail(idx) {
   const o = dashboardData.orders[idx];
   if (!o) return;
-  showOrderDetail(o);
+  showOrderDetail(o.id);
 }
 
 // --- Shared order detail (used from dashboard + orders section) ---
-function showOrderDetail(o) {
+async function showOrderDetail(orderId) {
+  // Fetch full order with items and log
+  let full;
+  try {
+    full = await api('/api/orders?id=' + orderId);
+  } catch {
+    // Fallback to cached data
+    const o = allOrders.find(x => x.id === orderId);
+    if (!o) return;
+    full = o;
+  }
+  const o = full;
   const payLabel = o.payment_method === 'btc' ? 'BTC' : o.payment_method === 'xmr' ? 'XMR' : o.payment_method === 'cash' ? 'Cash' : o.payment_method || '—';
   const delLabel = o.delivery_type === 'delivery' ? 'Delivery' + (o.delivery_borough ? ' (' + o.delivery_borough + ')' : '') : o.delivery_type === 'shipping' ? 'Shipping' : '—';
+
+  // Order items
+  const items = full.items || [];
+  const itemsHtml = items.length > 0
+    ? `<table style="width:100%;font-size:.85rem;margin-top:4px"><thead><tr><th style="text-align:left;padding:4px 8px;color:var(--text-muted);font-size:.72rem">ITEM</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-size:.72rem">QTY</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-size:.72rem">PRICE</th></tr></thead><tbody>${items.map(it => `<tr><td style="padding:4px 8px">${esc(it.product_name)}${it.variant_label ? ' <span style="color:var(--text-muted)">(' + esc(it.variant_label) + ')</span>' : ''}</td><td style="padding:4px 8px;text-align:right">${it.quantity}</td><td style="padding:4px 8px;text-align:right;color:var(--green)">$${parseFloat(it.price).toFixed(2)}</td></tr>`).join('')}</tbody></table>`
+    : '<span style="color:var(--text-muted)">No line items</span>';
+
+  // Order log
+  const log = full.log || [];
+  const logHtml = log.length > 0
+    ? `<div style="margin-top:4px;max-height:200px;overflow-y:auto">${log.map(l => `<div style="padding:8px 0;border-bottom:1px solid var(--surface2);font-size:.82rem"><span style="color:var(--text-muted)">${new Date(l.created_at).toLocaleString()}</span> <strong style="color:${l.action === 'created' ? 'var(--success)' : l.action === 'updated' ? 'var(--warning)' : l.action === 'deleted' ? 'var(--danger)' : 'var(--blue)'}">${esc(l.action)}</strong><br><span style="color:var(--text-dim)">${esc(l.details)}</span>${l.performed_by ? `<br><span style="color:var(--text-muted);font-size:.75rem">by ${esc(l.performed_by)}</span>` : ''}</div>`).join('')}</div>`
+    : '<span style="color:var(--text-muted)">No log entries yet</span>';
+
   openDetail('Order #' + o.id, [
     { label: 'Customer', value: o.customer_name || 'N/A' },
     { label: 'Email', value: o.customer_email || '—' },
@@ -1590,7 +1615,12 @@ function showOrderDetail(o) {
     { label: 'Shipping Address', value: o.shipping_address || '—', full: true },
     { label: 'Device', value: o.device_info || '—' },
     { label: 'Date', value: o.created_at ? new Date(o.created_at).toLocaleString() : '—' },
+    { label: 'Order Items', html: itemsHtml, full: true },
+    { label: 'Order Log', html: logHtml, full: true },
   ], { onEdit: () => { closeDetail(); editOrder(o.id); } });
+
+  // Log the view
+  try { await api('/api/orders?id=' + orderId + '&action=log-view'); } catch {}
 }
 
 // --- Products section: clickable card detail ---
@@ -1633,9 +1663,7 @@ async function showProductDetail(id) {
 
 // --- Orders section: clickable row ---
 function showFullOrderDetail(id) {
-  const o = allOrders.find(x => x.id === id);
-  if (!o) return;
-  showOrderDetail(o);
+  showOrderDetail(id);
 }
 
 // --- Customers section: clickable row ---

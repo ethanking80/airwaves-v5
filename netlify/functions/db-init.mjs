@@ -189,6 +189,18 @@ export default async (req, context) => {
     // Add variant_label to order_items for historical record
     await sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_label VARCHAR(100) DEFAULT ''`;
 
+    // Order log table
+    await sql`
+      CREATE TABLE IF NOT EXISTS order_log (
+        id SERIAL PRIMARY KEY,
+        order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+        action VARCHAR(100) NOT NULL,
+        details TEXT DEFAULT '',
+        performed_by VARCHAR(255) DEFAULT '',
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+
     // Reviews table migrations
     await sql`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewer_name VARCHAR(255)`;
     await sql`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS title VARCHAR(255)`;
