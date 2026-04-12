@@ -193,13 +193,15 @@ export default async (req, context) => {
     await sql`
       CREATE TABLE IF NOT EXISTS order_log (
         id SERIAL PRIMARY KEY,
-        order_id INTEGER NOT NULL,
+        order_id VARCHAR(100) NOT NULL,
         action VARCHAR(100) NOT NULL,
         details TEXT DEFAULT '',
         performed_by VARCHAR(255) DEFAULT '',
         created_at TIMESTAMP DEFAULT NOW()
       )
     `;
+    // Fix order_log.order_id type if table existed with wrong type
+    await sql`ALTER TABLE order_log ALTER COLUMN order_id TYPE VARCHAR(100) USING order_id::VARCHAR`;
 
     // Reviews table migrations
     await sql`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewer_name VARCHAR(255)`;

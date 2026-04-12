@@ -64,8 +64,10 @@ export default async (req, context) => {
 
         const [order] = await sql`SELECT * FROM orders WHERE id = ${orderId}`;
         if (!order) return new Response(JSON.stringify({ error: 'Order not found' }), { status: 404, headers });
-        const items = await sql`SELECT * FROM order_items WHERE order_id = ${orderId}`;
-        const log = await sql`SELECT * FROM order_log WHERE order_id = ${orderId} ORDER BY created_at DESC`;
+        let items = [];
+        let log = [];
+        try { items = await sql`SELECT * FROM order_items WHERE order_id = ${orderId}`; } catch {}
+        try { log = await sql`SELECT * FROM order_log WHERE order_id = ${orderId} ORDER BY created_at DESC`; } catch {}
         return new Response(JSON.stringify({ ...order, items, log }), { status: 200, headers });
       }
       // Admin: get all orders
