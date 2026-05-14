@@ -6,6 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AIRWAVES is a premium hemp products e-commerce store. It's a serverless full-stack app deployed on Netlify with a Neon PostgreSQL database. Current version: **v4.8.0**.
 
+- **Live**: https://airwaves3.netlify.app
+- **Default admin login** (seeded by `db-init`): `admin@airwaves.com` / `admin123`
+
 ## Tech Stack
 
 - **Frontend**: Vanilla HTML/CSS/JS (no framework, no build step). Each page is a self-contained HTML file with inline `<style>` and `<script>` tags.
@@ -29,9 +32,9 @@ All pages are single-file HTML documents with embedded CSS and JS. No bundler, n
 
 Each function is a single `.mjs` file exporting a default async handler `(req, context) => Response`. Routing within a function is done via query params (`?action=`, `?id=`) and HTTP methods, not path-based routing.
 
-Key functions:
+The 11 functions:
 - `auth.mjs` - Registration, login, password reset, token verification. Exports `verifyToken()` used by other functions.
-- `db-init.mjs` - Creates all database tables and seeds initial data (30 products, reviews, variants). Hit `/api/db-init` after deploy.
+- `db-init.mjs` - Idempotent: creates all database tables and seeds initial data (30 products, reviews, variants). Safe to re-run. Hit `/api/db-init` after every deploy that changes the schema.
 - `products.mjs` - Product CRUD. Returns variant summary (min_price, variant_count) on list, full variants on detail.
 - `orders.mjs` - Order CRUD with order_log audit trail. Logs create, status change, edit, view, delete events.
 - `cart.mjs` - Cart management. Supports `variant_id` for size/weight selection.
@@ -44,6 +47,12 @@ Key functions:
 
 All functions are accessed at `/.netlify/functions/<name>` (Netlify rewrites `/api/<name>` automatically). Each function sets its own CORS headers manually.
 
+### `netlify.toml`
+
+- `publish = "public"`, `functions = "netlify/functions"`
+- `node_bundler = "esbuild"` — functions are bundled with esbuild on deploy. ESM `.mjs` imports work; check the deploy log if a function fails to bundle.
+- Global security headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`.
+
 ### Database Schema
 
 Defined in `db-init.mjs`. Core tables:
@@ -51,7 +60,7 @@ Defined in `db-init.mjs`. Core tables:
 - `products` - 30 seeded products with rich fields (brand, terpenes, effects, flavor_notes, lineage, use_cases)
 - `product_variants` - Size/weight options per product with individual pricing and stock
 - `cart_items` - Cart with optional variant_id
-- `orders` - Uses VARCHAR UUID IDs (not integer). **Important**: all onclick handlers must quote order IDs.
+- `orders` - Uses `VARCHAR(100)` UUID IDs (`gen_random_uuid()`), not integers. See *Order IDs are UUIDs* under Key Patterns.
 - `order_items` - Line items with variant_label
 - `order_log` - Audit trail for all order events (order_id is VARCHAR to match orders.id)
 - `reviews`, `support_tickets`, `settings`, `cash_transactions`, `password_reset_tokens`
@@ -100,7 +109,11 @@ Requires Netlify CLI (`npm install -g netlify-cli`) and a linked Netlify site (`
 netlify deploy --build --prod
 ```
 
-After deploying, initialize the database by visiting `/api/db-init`.
+After deploying, initialize/refresh the database by visiting `/api/db-init` — idempotent, seeds 30 products + variants + reviews, safe to re-run.
+
+### Repo-root clutter
+
+`air42/`, `aw41b/`, `airwaves-4.1.zip`, `aw41b-deploy.zip` at the repo root are stale snapshots of older versions and are **not load-bearing**. Don't edit them, don't reference them, and treat them as cleanup candidates. Active code lives only in `public/`, `netlify/functions/`, `tor-setup/`.
 
 ### Repos
 
