@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AIRWAVES is a premium hemp products e-commerce store. It's a serverless full-stack app deployed on Netlify with a Neon PostgreSQL database. Current version: **v4.7**.
+AIRWAVES is a premium hemp products e-commerce store. It's a serverless full-stack app deployed on Netlify with a Neon PostgreSQL database. Current version: **v4.8.0**.
 
 ## Tech Stack
 
